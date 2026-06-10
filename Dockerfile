@@ -7,11 +7,12 @@
 
 FROM python:3.11-slim
 
-# 시스템 의존성 (Pillow JPEG/PNG 디코딩용)
+# 시스템 의존성 (Pillow JPEG/PNG/WebP 디코딩용)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         libjpeg62-turbo \
         libpng16-16 \
+        libwebp-dev \
         ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
