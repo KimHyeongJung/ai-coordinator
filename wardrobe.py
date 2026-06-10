@@ -6,9 +6,9 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import os
-import tempfile
 
 from huggingface_hub import InferenceClient
 from langchain_core.output_parsers import JsonOutputParser
@@ -68,20 +68,26 @@ def _chain_lazy():
 
 
 def caption_clothing(image: Image.Image) -> str:
-    """BLIP으로 의류 이미지 캡션 생성. 기존 tempfile 패턴 사용."""
+    """
+    BLIP으로 의류 이미지 캡션 생성.
+    bytes로 직접 전송해 tempfile 경로 문제를 우회한다.
+    실패 시 빈 문자열 반환 (analyze_and_save에서 저장 차단).
+    """
     client = _vision_lazy()
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-        image.convert("RGB").save(tmp, format="JPEG")
-        tmp_path = tmp.name
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, format="JPEG")
+    image_bytes = buf.getvalue()
     try:
-        result = client.image_to_text(tmp_path, model=VISION_MODEL)
-        # huggingface_hub 버전에 따라 str 또는 ImageToTextOutput 반환
-        return result.generated_text if hasattr(result, "generated_text") else str(result)
+        result = client.image_to_text(image_bytes, model=VISION_MODEL)
+        caption = result.generated_text if hasattr(result, "generated_text") else str(result)
+        if not caption or not caption.strip():
+            raise ValueError(f"BLIP 빈 캡션 반환: {repr(result)}")
+        logger.info("caption_clothing 성공: %s", caption[:80])
+        return caption.strip()
     except Exception as e:
-        logger.error("caption_clothing 실패: %s", e)
-        return "a clothing item on a hanger"
-    finally:
-        os.unlink(tmp_path)
+        # repr(e)로 빈 메시지 예외(ConnectionError 등)도 타입 포함해 출력
+        logger.error("caption_clothing 실패: [%s] %s", type(e).__name__, repr(e))
+        return ""
 
 
 def extract_clothing_info(caption: str) -> dict:
@@ -147,6 +153,16 @@ def analyze_and_save(
     try:
         image = _load_image_from_path(image_path)
         caption = caption_clothing(image)
+
+        # 캡셔닝 실패 시 쓰레기 데이터 저장 방지
+        if not caption:
+            return (
+                "❌ AI 이미지 분석 실패\n"
+                "HF Inference API 서버가 응답하지 않습니다.\n"
+                "잠시 후(1~2분) 다시 시도해 주세요. (BLIP 모델 콜드 스타트)",
+                dashboard.get_wardrobe_table(),
+            )
+
         info = extract_clothing_info(caption)
 
         item = {
