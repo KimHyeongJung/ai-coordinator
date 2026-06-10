@@ -103,21 +103,49 @@ def extract_clothing_info(caption: str) -> dict:
         }
 
 
+def _load_image_from_path(image_path: str) -> Image.Image:
+    """
+    filepath 모드에서 Gradio가 전달한 경로로 PIL Image 로드.
+    한글 파일명 등으로 경로가 맞지 않을 때 디렉토리 검색으로 폴백.
+    """
+    if os.path.exists(image_path):
+        return Image.open(image_path).convert("RGB")
+
+    # 파일이 없으면 같은 디렉토리에서 임의 이미지 파일 탐색 (인코딩 불일치 대응)
+    dir_path = os.path.dirname(image_path)
+    if dir_path and os.path.isdir(dir_path):
+        IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+        candidates = [
+            f for f in os.listdir(dir_path)
+            if os.path.splitext(f)[1].lower() in IMAGE_EXTS
+        ]
+        if candidates:
+            return Image.open(os.path.join(dir_path, candidates[0])).convert("RGB")
+
+    raise FileNotFoundError(
+        f"이미지 파일을 찾을 수 없습니다: {image_path}\n"
+        "파일명을 영문으로 변경 후 다시 시도해 주세요."
+    )
+
+
 def analyze_and_save(
-    image: Image.Image | None,
+    image_path: str | None,
     size: str,
     price: str,
     purchase_date: str,
 ) -> tuple[str, list]:
     """
     전체 파이프라인 함수 (Gradio 콜백으로 직접 연결).
-    1. BLIP 캡셔닝 → 2. LLM 정보 추출 → 3. Supabase 저장
+    gr.Image(type="filepath")에서 파일 경로를 받아 직접 PIL로 열어
+    Gradio의 한글 파일명 버그를 우회한다.
+    1. PIL 로드 → 2. BLIP 캡셔닝 → 3. LLM 정보 추출 → 4. Supabase 저장
     반환: (결과 메시지, 현재 옷장 테이블 데이터)
     """
-    if image is None:
+    if image_path is None:
         return "이미지를 먼저 업로드해 주세요.", dashboard.get_wardrobe_table()
 
     try:
+        image = _load_image_from_path(image_path)
         caption = caption_clothing(image)
         info = extract_clothing_info(caption)
 

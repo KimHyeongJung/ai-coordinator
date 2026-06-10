@@ -78,7 +78,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet") as demo:
         # ── 탭 1: 옷장 ──────────────────────────────────────────────────────
         with gr.Tab("👔 옷장"):
             with gr.Row():
-                image_input = gr.Image(type="pil", label="의류 사진 업로드")
+                image_input = gr.Image(type="filepath", label="의류 사진 업로드")
                 with gr.Column():
                     size_input = gr.Textbox(
                         label="사이즈 (선택)", placeholder="S, M, L, 250 등"
