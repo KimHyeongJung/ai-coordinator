@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 OUTFIT_SYSTEM_PROMPT = """
 너는 스타일리스트 AI다. 주어진 옷장 목록에서 어울리는 의류를 조합해 코디를 만들어라.
 반드시 아래 JSON 형식만 출력하고, 다른 텍스트/마크다운/코드블록 금지.
-{"name": str, "item_ids": [str], "tags": [str], "situation": str, "season": str, "reason": str}
+{{"name": str, "item_ids": [str], "tags": [str], "situation": str, "season": str, "reason": str}}
 - item_ids: 선택한 아이템의 id 배열 (2~4개)
 - tags: 코디 태그 배열 (예: ["회사", "봄", "스마트캐주얼"])
 - reason: 이 조합을 선택한 이유 (한국어 1~2문장)
