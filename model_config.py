@@ -1,10 +1,11 @@
 """
-6주차 모델 설정 — HuggingFace Inference API
-===========================================
-- VISION_MODEL: 음식 이미지 분류 모델
-- LLM_MODEL:    분류 결과를 받아 칼로리/영양소를 추정하는 텍스트 LLM
+AI Closet 모델 설정 — HuggingFace Inference API
+================================================
+- VISION_MODEL: 의류 이미지 캡셔닝 모델 (BLIP)
+- LLM_MODEL:    의류 정보 추출 / 코디 생성 / 대화형 추천 LLM
+- 날씨 API: Open-Meteo (무료, 인증 불필요)
 
-토큰은 .env 파일의 HUGGINGFACEHUB_API_TOKEN 또는 HF_TOKEN 환경변수에서 읽는다.
+토큰은 .env 파일의 HF_TOKEN 또는 HUGGINGFACEHUB_API_TOKEN 환경변수에서 읽는다.
 HF Space에 배포할 때는 Space의 Settings > Secrets 에서 HF_TOKEN 을 등록한다.
 """
 
@@ -17,15 +18,24 @@ from huggingface_hub import InferenceClient
 # -----------------------------------------------------------------------------
 # 모델 선택
 # -----------------------------------------------------------------------------
-# 음식 이미지 분류 (Vision Transformer, food-101 파인튜닝)
-VISION_MODEL = "nateraw/food"
+# 의류 이미지 캡셔닝 (BLIP base — image-to-text)
+VISION_MODEL = "Salesforce/blip-image-captioning-base"
 
-# 칼로리/영양소 추정용 텍스트 LLM (무료 티어 호환성 좋은 instruct 모델)
-LLM_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
+# 의류 정보 추출 / 코디 생성 / 데일리룩 추천 LLM
+LLM_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+
+# -----------------------------------------------------------------------------
+# 날씨 API (Open-Meteo, API 키 불필요)
+# -----------------------------------------------------------------------------
+WEATHER_API_BASE = "https://api.open-meteo.com/v1/forecast"
+
+# 기본 좌표: 서울 (사용자가 변경 가능)
+DEFAULT_LATITUDE = 37.5665
+DEFAULT_LONGITUDE = 126.9780
 
 
 def get_token() -> str:
-    """환경변수에서 HF 토큰을 읽는다 (이미지 분류 + LangChain LLM 공통)."""
+    """환경변수에서 HF 토큰을 읽는다 (이미지 캡셔닝 + LangChain LLM 공통)."""
     token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
     if not token:
         raise SystemExit(
@@ -38,5 +48,5 @@ def get_token() -> str:
 
 
 def get_client() -> InferenceClient:
-    """이미지 분류용 InferenceClient (LangChain 추상화 영역 아님)."""
+    """InferenceClient 인스턴스 반환 (이미지 캡셔닝 등 직접 API 호출용)."""
     return InferenceClient(token=get_token())

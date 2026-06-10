@@ -22,8 +22,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir -r requirements.txt
 
-# 앱 소스 (6주차 구조 그대로)
-COPY app.py model_config.py ./
+# 앱 소스
+COPY app.py model_config.py storage.py wardrobe.py outfit.py daily_look.py dashboard.py ./
 
 EXPOSE 7860
 
