@@ -1,5 +1,5 @@
 ---
-title: AI Closet
+title: AI Closet Service
 emoji: 👕
 colorFrom: blue
 colorTo: green
