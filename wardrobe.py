@@ -155,32 +155,41 @@ def _load_image_from_path(image_path: str) -> Image.Image:
 
 def analyze_and_save(
     image_path: str | None,
+    manual_description: str,
     size: str,
     price: str,
     purchase_date: str,
 ) -> tuple[str, list]:
     """
     전체 파이프라인 함수 (Gradio 콜백으로 직접 연결).
-    gr.Image(type="filepath")에서 파일 경로를 받아 직접 PIL로 열어
-    Gradio의 한글 파일명 버그를 우회한다.
-    1. PIL 로드 → 2. BLIP 캡셔닝 → 3. LLM 정보 추출 → 4. Supabase 저장
+    manual_description이 있으면 BLIP을 건너뛰고 해당 텍스트를 캡션으로 사용한다.
+    image_path가 있으면: PIL 로드 → BLIP 캡셔닝 → LLM 정보 추출 → Supabase 저장
     반환: (결과 메시지, 현재 옷장 테이블 데이터)
     """
-    if image_path is None:
-        return "이미지를 먼저 업로드해 주세요.", dashboard.get_wardrobe_table()
+    manual = (manual_description or "").strip()
+
+    if image_path is None and not manual:
+        return "이미지를 업로드하거나 직접 설명을 입력해 주세요.", dashboard.get_wardrobe_table()
 
     try:
-        image = _load_image_from_path(image_path)
-        caption = caption_clothing(image)
+        # 캡션 결정: 직접 입력 우선 → BLIP 자동 분석
+        if manual:
+            caption = manual
+            caption_source = "수동 입력"
+        else:
+            image = _load_image_from_path(image_path)
+            caption = caption_clothing(image)
+            caption_source = "AI(BLIP)"
 
-        # 캡셔닝 실패 시 쓰레기 데이터 저장 방지
-        if not caption:
-            return (
-                "❌ AI 이미지 분석 실패\n"
-                "HF Inference API 서버가 응답하지 않습니다.\n"
-                "잠시 후(1~2분) 다시 시도해 주세요. (BLIP 모델 콜드 스타트)",
-                dashboard.get_wardrobe_table(),
-            )
+            if not caption:
+                return (
+                    "❌ AI 이미지 분석 실패 — HF Inference API에 연결할 수 없습니다.\n\n"
+                    "아래 두 가지 방법으로 해결하세요:\n"
+                    "  1) 잠시 후(1~2분) 다시 시도 (BLIP 모델 콜드 스타트)\n"
+                    "  2) '직접 설명' 필드에 의류 설명을 입력하고 다시 클릭\n"
+                    "     예: 네이비 체크 반소매 오버사이즈 셔츠",
+                    dashboard.get_wardrobe_table(),
+                )
 
         info = extract_clothing_info(caption)
 
@@ -200,14 +209,15 @@ def analyze_and_save(
 
         saved = storage.add_item(item)
 
+        season_str = ", ".join(item["season"]) if isinstance(item["season"], list) else str(item["season"])
         if saved.get("id"):
             msg = (
-                f"✅ 저장 완료!\n"
+                f"✅ 저장 완료! ({caption_source})\n"
                 f"이름: {item['name']}\n"
                 f"카테고리: {item['category']}\n"
                 f"색상: {item['color']}\n"
-                f"계절: {', '.join(item['season'])}\n"
-                f"AI 분석 캡션: {caption[:80]}..."
+                f"계절: {season_str}\n"
+                f"분석 근거: {caption[:80]}"
             )
         else:
             msg = (

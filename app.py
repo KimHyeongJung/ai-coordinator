@@ -80,6 +80,11 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet") as demo:
             with gr.Row():
                 image_input = gr.Image(type="filepath", label="의류 사진 업로드")
                 with gr.Column():
+                    description_input = gr.Textbox(
+                        label="직접 설명 (선택 — AI 분석 실패 시 입력)",
+                        placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
+                        lines=2,
+                    )
                     size_input = gr.Textbox(
                         label="사이즈 (선택)", placeholder="S, M, L, 250 등"
                     )
@@ -156,7 +161,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet") as demo:
     # 옷장 탭
     upload_btn.click(
         fn=wardrobe.analyze_and_save,
-        inputs=[image_input, size_input, price_input, date_input],
+        inputs=[image_input, description_input, size_input, price_input, date_input],
         outputs=[upload_result, wardrobe_df],
     )
     refresh_wardrobe_btn.click(
