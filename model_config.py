@@ -1,7 +1,7 @@
 """
-AI Closet 모델 설정 — HuggingFace Inference API
-================================================
-- VISION_MODEL: 의류 이미지 캡셔닝 모델 (BLIP)
+AI Closet 모델 설정
+===================
+- VISION_MODEL: 의류 이미지 캡셔닝 모델 (Florence-2, 로컬 추론)
 - LLM_MODEL:    의류 정보 추출 / 코디 생성 / 대화형 추천 LLM
 - 날씨 API: Open-Meteo (무료, 인증 불필요)
 
@@ -18,8 +18,8 @@ from huggingface_hub import InferenceClient
 # -----------------------------------------------------------------------------
 # 모델 선택
 # -----------------------------------------------------------------------------
-# 의류 이미지 캡셔닝 (BLIP base — image-to-text)
-VISION_MODEL = "Salesforce/blip-image-captioning-base"
+# 의류 이미지 캡셔닝 (Florence-2 — 로컬 transformers 추론)
+VISION_MODEL = "microsoft/Florence-2-base"
 
 # 의류 정보 추출 / 코디 생성 / 데일리룩 추천 LLM
 LLM_MODEL = "Qwen/Qwen2.5-7B-Instruct"

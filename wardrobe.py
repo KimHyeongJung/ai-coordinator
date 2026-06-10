@@ -1,8 +1,9 @@
 """
-의류 업로드 파이프라인: BLIP 캡셔닝 → LLM 정보 추출 → Supabase 저장.
+의류 업로드 파이프라인: Florence-2 캡셔닝 → LLM 정보 추출 → Supabase 저장.
 
-기존 estimate_calories LCEL 체인 패턴을 그대로 재사용한다.
-BLIP 캡셔닝은 huggingface_hub API 버전 변경에 독립적으로 requests로 직접 호출한다.
+Florence-2 모델을 transformers로 로컬에서 직접 로드한다.
+HF Spaces Docker 환경에서는 외부 Inference API 네트워크가 차단되므로
+requests 방식 대신 로컬 추론을 사용한다.
 """
 
 from __future__ import annotations
@@ -11,11 +12,12 @@ import io
 import logging
 import os
 
-import requests
+import torch
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 from PIL import Image
+from transformers import AutoModelForCausalLM, AutoProcessor
 
 import dashboard
 import storage
@@ -23,7 +25,24 @@ from model_config import LLM_MODEL, VISION_MODEL, get_token
 
 logger = logging.getLogger(__name__)
 
-HF_INFERENCE_URL = "https://api-inference.huggingface.co/models/{model}"
+_florence_model = None
+_florence_processor = None
+
+
+def _load_florence():
+    """Florence-2 모델과 프로세서를 최초 1회만 로드한다 (lazy init)."""
+    global _florence_model, _florence_processor
+    if _florence_model is None:
+        logger.info("Florence-2 모델 로딩 중: %s", VISION_MODEL)
+        _florence_processor = AutoProcessor.from_pretrained(
+            VISION_MODEL, trust_remote_code=True
+        )
+        _florence_model = AutoModelForCausalLM.from_pretrained(
+            VISION_MODEL, trust_remote_code=True, torch_dtype=torch.float32
+        )
+        _florence_model.eval()
+        logger.info("Florence-2 모델 로드 완료")
+    return _florence_model, _florence_processor
 
 CLOTHING_SYSTEM_PROMPT = """
 너는 패션 전문가 AI다. 영어로 된 의류 이미지 캡션을 분석해 의류 정보를 JSON으로 추출해라.
@@ -64,45 +83,36 @@ def _chain_lazy():
 
 def caption_clothing(image: Image.Image) -> str:
     """
-    BLIP으로 의류 이미지 캡션 생성.
-    huggingface_hub의 InferenceClient API가 버전마다 달라지는 문제를 피해
-    requests로 HF Inference API를 직접 호출한다.
+    Florence-2로 의류 이미지 캡션 생성 (로컬 추론).
+    HF Spaces Docker 환경에서 외부 API 없이 직접 실행한다.
     실패 시 빈 문자열 반환 (analyze_and_save에서 저장 차단).
     """
-    buf = io.BytesIO()
-    image.convert("RGB").save(buf, format="JPEG")
-    image_bytes = buf.getvalue()
-
-    url = HF_INFERENCE_URL.format(model=VISION_MODEL)
-    headers = {"Authorization": f"Bearer {get_token()}"}
-
     try:
-        resp = requests.post(url, headers=headers, data=image_bytes, timeout=60)
+        model, processor = _load_florence()
+        rgb_image = image.convert("RGB")
 
-        # 모델 로딩 중(503) — 콜드 스타트 안내
-        if resp.status_code == 503:
-            err = resp.json() if resp.content else {}
-            eta = err.get("estimated_time", "알 수 없음")
-            raise ValueError(f"모델 로딩 중 (예상 대기: {eta}초). 잠시 후 다시 시도해 주세요.")
+        task = "<DETAILED_CAPTION>"
+        inputs = processor(text=task, images=rgb_image, return_tensors="pt")
 
-        resp.raise_for_status()
-        result = resp.json()
+        with torch.no_grad():
+            generated_ids = model.generate(
+                input_ids=inputs["input_ids"],
+                pixel_values=inputs["pixel_values"],
+                max_new_tokens=256,
+                num_beams=3,
+            )
 
-        # 응답 형식: [{"generated_text": "..."}] 또는 {"generated_text": "..."}
-        if isinstance(result, list):
-            caption = result[0].get("generated_text", "") if result else ""
-        elif isinstance(result, dict):
-            if "error" in result:
-                raise ValueError(f"API 오류: {result['error']}")
-            caption = result.get("generated_text", "")
-        else:
-            caption = str(result)
+        raw = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+        parsed = processor.post_process_generation(
+            raw, task=task, image_size=(rgb_image.width, rgb_image.height)
+        )
+        caption = parsed.get(task, "").strip()
 
-        if not caption or not caption.strip():
-            raise ValueError(f"빈 캡션 반환: {repr(result)}")
+        if not caption:
+            raise ValueError(f"빈 캡션 반환: {repr(parsed)}")
 
         logger.info("caption_clothing 성공: %s", caption[:80])
-        return caption.strip()
+        return caption
 
     except Exception as e:
         logger.error("caption_clothing 실패: [%s] %s", type(e).__name__, repr(e))
