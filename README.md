@@ -1,14 +1,10 @@
 ---
-title: {{title}}
-emoji: {{emoji}}
-colorFrom: {{colorFrom}}
-colorTo: {{colorTo}}
-sdk: {{sdk}}
-sdk_version: "{{sdkVersion}}"
-{{#pythonVersion}}
-python_version: "{{pythonVersion}}"
-{{/pythonVersion}}
-app_file: app.py
+title: AI Closet
+emoji: 👕
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
 pinned: false
 ---
 
