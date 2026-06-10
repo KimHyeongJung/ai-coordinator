@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import io
+import json
 import logging
 import os
 
@@ -70,7 +71,8 @@ def _chain_lazy():
 def caption_clothing(image: Image.Image) -> str:
     """
     BLIP으로 의류 이미지 캡션 생성.
-    bytes로 직접 전송해 tempfile 경로 문제를 우회한다.
+    huggingface_hub 0.30+에서 image_to_text() 내부 파서가
+    StopIteration을 일으키는 버그가 있어 client.post()로 직접 호출한다.
     실패 시 빈 문자열 반환 (analyze_and_save에서 저장 차단).
     """
     client = _vision_lazy()
@@ -78,14 +80,21 @@ def caption_clothing(image: Image.Image) -> str:
     image.convert("RGB").save(buf, format="JPEG")
     image_bytes = buf.getvalue()
     try:
-        result = client.image_to_text(image_bytes, model=VISION_MODEL)
-        caption = result.generated_text if hasattr(result, "generated_text") else str(result)
+        raw = client.post(data=image_bytes, model=VISION_MODEL, task="image-to-text")
+        result = json.loads(raw)
+        # 응답 형식: [{"generated_text": "..."}] 또는 {"generated_text": "..."}
+        if isinstance(result, list):
+            caption = result[0].get("generated_text", "") if result else ""
+        elif isinstance(result, dict):
+            caption = result.get("generated_text", "")
+        else:
+            caption = str(result)
+
         if not caption or not caption.strip():
             raise ValueError(f"BLIP 빈 캡션 반환: {repr(result)}")
         logger.info("caption_clothing 성공: %s", caption[:80])
         return caption.strip()
     except Exception as e:
-        # repr(e)로 빈 메시지 예외(ConnectionError 등)도 타입 포함해 출력
         logger.error("caption_clothing 실패: [%s] %s", type(e).__name__, repr(e))
         return ""
 
