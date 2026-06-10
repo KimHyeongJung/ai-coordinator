@@ -2,16 +2,16 @@
 의류 업로드 파이프라인: BLIP 캡셔닝 → LLM 정보 추출 → Supabase 저장.
 
 기존 estimate_calories LCEL 체인 패턴을 그대로 재사용한다.
+BLIP 캡셔닝은 huggingface_hub API 버전 변경에 독립적으로 requests로 직접 호출한다.
 """
 
 from __future__ import annotations
 
 import io
-import json
 import logging
 import os
 
-from huggingface_hub import InferenceClient
+import requests
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
@@ -22,6 +22,8 @@ import storage
 from model_config import LLM_MODEL, VISION_MODEL, get_token
 
 logger = logging.getLogger(__name__)
+
+HF_INFERENCE_URL = "https://api-inference.huggingface.co/models/{model}"
 
 CLOTHING_SYSTEM_PROMPT = """
 너는 패션 전문가 AI다. 영어로 된 의류 이미지 캡션을 분석해 의류 정보를 JSON으로 추출해라.
@@ -35,15 +37,7 @@ CLOTHING_SYSTEM_PROMPT = """
 - wash_instruction: 소재 기반 세탁 방법 한 줄로 작성
 """
 
-_vision_client: InferenceClient | None = None
 _clothing_chain = None
-
-
-def _vision_lazy() -> InferenceClient:
-    global _vision_client
-    if _vision_client is None:
-        _vision_client = InferenceClient(token=get_token())
-    return _vision_client
 
 
 def _chain_lazy():
@@ -71,29 +65,45 @@ def _chain_lazy():
 def caption_clothing(image: Image.Image) -> str:
     """
     BLIP으로 의류 이미지 캡션 생성.
-    huggingface_hub 0.30+에서 image_to_text() 내부 파서가
-    StopIteration을 일으키는 버그가 있어 client.post()로 직접 호출한다.
+    huggingface_hub의 InferenceClient API가 버전마다 달라지는 문제를 피해
+    requests로 HF Inference API를 직접 호출한다.
     실패 시 빈 문자열 반환 (analyze_and_save에서 저장 차단).
     """
-    client = _vision_lazy()
     buf = io.BytesIO()
     image.convert("RGB").save(buf, format="JPEG")
     image_bytes = buf.getvalue()
+
+    url = HF_INFERENCE_URL.format(model=VISION_MODEL)
+    headers = {"Authorization": f"Bearer {get_token()}"}
+
     try:
-        raw = client.post(data=image_bytes, model=VISION_MODEL, task="image-to-text")
-        result = json.loads(raw)
+        resp = requests.post(url, headers=headers, data=image_bytes, timeout=60)
+
+        # 모델 로딩 중(503) — 콜드 스타트 안내
+        if resp.status_code == 503:
+            err = resp.json() if resp.content else {}
+            eta = err.get("estimated_time", "알 수 없음")
+            raise ValueError(f"모델 로딩 중 (예상 대기: {eta}초). 잠시 후 다시 시도해 주세요.")
+
+        resp.raise_for_status()
+        result = resp.json()
+
         # 응답 형식: [{"generated_text": "..."}] 또는 {"generated_text": "..."}
         if isinstance(result, list):
             caption = result[0].get("generated_text", "") if result else ""
         elif isinstance(result, dict):
+            if "error" in result:
+                raise ValueError(f"API 오류: {result['error']}")
             caption = result.get("generated_text", "")
         else:
             caption = str(result)
 
         if not caption or not caption.strip():
-            raise ValueError(f"BLIP 빈 캡션 반환: {repr(result)}")
+            raise ValueError(f"빈 캡션 반환: {repr(result)}")
+
         logger.info("caption_clothing 성공: %s", caption[:80])
         return caption.strip()
+
     except Exception as e:
         logger.error("caption_clothing 실패: [%s] %s", type(e).__name__, repr(e))
         return ""
