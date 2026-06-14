@@ -790,7 +790,8 @@ button.secondary:hover {
     background: #EEF2FA !important;
     border-right: none !important;
     position: relative !important;
-    overflow: visible !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
     flex-shrink: 0 !important;
 }
 #left-guide > .block { background: #EEF2FA !important; border: none !important; padding: 0 !important; height: 100% !important; }
