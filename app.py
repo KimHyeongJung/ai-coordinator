@@ -445,6 +445,16 @@ button.secondary:hover {
     color: #6B7484 !important;
 }
 
+.image-box .upload-text {
+    color: #6B7484; /* 업로드 문구 색상 (주황색) */
+}
+.image-box .drag-text {
+    color: #6B7484; /* 드래그 문구 색상 (파란색) */
+}
+.image-box .image-label {
+    color: #6B7484; /* 레이블 텍스트 색상 (보라색) */
+}
+
 /* ── 결과 텍스트 박스 (자동 확장) ── */
 .result-box textarea {
     background: #EEF2FA !important;
@@ -856,6 +866,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     image_input = gr.Image(
                         type="filepath",
                         label=None,
+                        placeholder="여기에 이미지를 드래그하거나 클릭하여 업로드하세요.",
                         show_label=False,
                         elem_classes=["image-box"],
                     )
