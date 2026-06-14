@@ -109,9 +109,21 @@ def upload_image(src_path: str, filename: str) -> str | None:
 
 
 def delete_item(item_id: str) -> None:
-    """특정 아이템을 DB에서 삭제한다."""
+    """특정 아이템을 DB와 Storage에서 삭제한다."""
     try:
-        get_client().table("wardrobe_items").delete().eq("id", item_id).execute()
+        client = get_client()
+        # 이미지 URL 조회 후 Storage에서도 삭제
+        res = client.table("wardrobe_items").select("image_path").eq("id", item_id).execute()
+        if res.data:
+            image_url = res.data[0].get("image_path") or ""
+            if image_url:
+                # 공개 URL에서 파일명만 추출 (마지막 path 세그먼트)
+                filename = image_url.rstrip("/").split("/")[-1]
+                try:
+                    client.storage.from_("wardrobe-images").remove([filename])
+                except Exception as img_err:
+                    logger.warning("Storage 이미지 삭제 실패 (계속 진행): %s", img_err)
+        client.table("wardrobe_items").delete().eq("id", item_id).execute()
     except Exception as e:
         logger.error("delete_item 실패: %s", e)
 
