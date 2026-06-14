@@ -128,7 +128,7 @@ footer { display: none !important; }
     z-index: 100 !important;
     background: #FFFFFF !important;
     border-bottom: 1px solid var(--border) !important;
-    padding: 0 28px !important;
+    padding: 0 !important;
     height: 58px !important;
     display: flex !important;
     align-items: center !important;
@@ -603,9 +603,9 @@ button.secondary:hover {
     min-width: 46px !important;
 }
 #chat-send-btn button {
-    background: var(--navy-light) !important;
-    color: #fff !important;
-    border: none !important;
+    background: #EEF2FA !important;
+    color: var(--navy) !important;
+    border: 1.5px solid var(--border) !important;
     border-radius: 50% !important;
     width: 46px !important;
     height: 46px !important;
