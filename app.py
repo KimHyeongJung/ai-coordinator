@@ -781,35 +781,27 @@ button.secondary:hover {
 /* ── 2단 레이아웃 ── */
 #main-layout {
     gap: 0 !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
 }
-#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; height: 100% !important; }
+#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; height: auto !important; }
 
-/* 좌측 가이드 패널 — 컬럼 자체는 콘텐츠 높이에 맞게 늘어남 */
+/* 좌측 가이드 패널 */
 #left-guide {
     background: #EEF2FA !important;
-    border-right: none !important;
-    position: relative !important;
-    height: 100vh !important;
-    overflow-y: auto !important;
-    flex-shrink: 0 !important;
-}
-#left-guide > .block { background: #EEF2FA !important; border: none !important; padding: 0 !important; height: 100% !important; }
-#left-guide .block { background: #EEF2FA !important; border: none !important; }
-
-/* #usage-guide 만 sticky — 컬럼 안에서 뷰포트에 고정되다가 컬럼 끝에서 자연스럽게 멈춤 */
-#usage-guide {
     position: sticky !important;
     top: 0 !important;
     height: 100vh !important;
     overflow-y: auto !important;
+    flex-shrink: 0 !important;
 }
+#left-guide > .block { background: #EEF2FA !important; border: none !important; padding: 0 !important; height: auto !important; }
+#left-guide .block { background: #EEF2FA !important; border: none !important; }
 
 /* 우측 서비스 패널 */
 #right-service {
     background: var(--surface) !important;
-    height: 100vh !important;
-    overflow-y: auto !important;
+    height: auto !important;
+    overflow: visible !important;
 }
 #right-service > .block { background: transparent !important; border: none !important; padding: 0 !important; height: auto !important; }
 
