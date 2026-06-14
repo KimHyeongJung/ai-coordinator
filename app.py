@@ -316,6 +316,44 @@ button.secondary:hover {
     background: #B91C1C !important;
 }
 
+/* ── 계절 선택 버튼 색상 ── */
+/* 봄 */
+#edit-w-season label:nth-child(1) {
+    background: #FFE4EF !important; color: #BE185D !important;
+    border-color: #FBCFE8 !important;
+}
+#edit-w-season label:nth-child(1):has(input:checked) {
+    background: #EC4899 !important; color: #fff !important;
+    border-color: #DB2777 !important;
+}
+/* 여름 */
+#edit-w-season label:nth-child(2) {
+    background: #E0F2FE !important; color: #0369A1 !important;
+    border-color: #BAE6FD !important;
+}
+#edit-w-season label:nth-child(2):has(input:checked) {
+    background: #0EA5E9 !important; color: #fff !important;
+    border-color: #0284C7 !important;
+}
+/* 가을 */
+#edit-w-season label:nth-child(3) {
+    background: #FEF3C7 !important; color: #92400E !important;
+    border-color: #FDE68A !important;
+}
+#edit-w-season label:nth-child(3):has(input:checked) {
+    background: #F59E0B !important; color: #fff !important;
+    border-color: #D97706 !important;
+}
+/* 겨울 */
+#edit-w-season label:nth-child(4) {
+    background: #EEF2FF !important; color: #3730A3 !important;
+    border-color: #C7D2FE !important;
+}
+#edit-w-season label:nth-child(4):has(input:checked) {
+    background: #6366F1 !important; color: #fff !important;
+    border-color: #4F46E5 !important;
+}
+
 /* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
 .block label > span:first-child,
 .block .label-wrap > span,
@@ -946,9 +984,10 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                             with gr.Row():
                                 edit_w_color = gr.Textbox(label="색상", interactive=True)
                                 edit_w_style = gr.Textbox(label="스타일", interactive=True)
-                    edit_w_season = gr.Dropdown(
+                    edit_w_season = gr.CheckboxGroup(
                         choices=["봄", "여름", "가을", "겨울"],
-                        label="계절", multiselect=True, interactive=True,
+                        label="계절", interactive=True,
+                        elem_id="edit-w-season",
                     )
                     with gr.Row():
                         edit_w_price = gr.Textbox(label="가격", interactive=True)
@@ -1000,6 +1039,10 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 selected_outfit_idx = gr.State(-1)
                 with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
                     gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
+                    gr.HTML('<div style="font-size:11px;font-weight:600;color:#5A6A8A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">착용 의류</div>')
+                    outfit_items_gallery = gr.HTML(
+                        value='<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
+                    )
                     with gr.Row():
                         edit_o_name = gr.Textbox(label="코디명", interactive=True)
                         edit_o_situation = gr.Dropdown(
@@ -1208,15 +1251,55 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         outputs=[outfit_result, outfit_df, outfit_items_state],
     )
 
+    # 코디 — 착용 의류 갤러리 HTML 생성 헬퍼
+    def _make_outfit_items_html(item_ids: list, wardrobe_map: dict) -> str:
+        if not item_ids:
+            return '<div style="color:#9BAAC4;font-size:12px;padding:8px 0">착용 의류 없음</div>'
+        cards = []
+        for iid in item_ids:
+            item = wardrobe_map.get(iid)
+            if not item:
+                continue
+            name = item.get("name", iid)
+            img_url = item.get("image_path")
+            if img_url:
+                img_part = (
+                    f'<img src="{img_url}" style="width:100%;height:100px;'
+                    f'object-fit:cover;border-radius:8px;display:block" />'
+                )
+            else:
+                img_part = (
+                    '<div style="width:100%;height:100px;background:#EEF2FA;border-radius:8px;'
+                    'display:flex;align-items:center;justify-content:center;font-size:22px">👔</div>'
+                )
+            cards.append(
+                f'<div style="flex:0 0 110px;min-width:110px;text-align:center">'
+                f'{img_part}'
+                f'<div style="font-size:11px;color:#5A6A8A;margin-top:4px;'
+                f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{name}</div>'
+                f'</div>'
+            )
+        if not cards:
+            return '<div style="color:#9BAAC4;font-size:12px;padding:8px 0">착용 의류 정보 없음</div>'
+        return (
+            '<div style="display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;padding:8px 0 12px">'
+            + "".join(cards)
+            + '</div>'
+        )
+
     # 코디 — 행 선택 → 편집 폼 채우기
-    def _on_outfit_select(evt: gr.SelectData, items):
+    def _on_outfit_select(evt: gr.SelectData, items, wardrobe_items):
         row = evt.index[0]
+        empty_gallery = '<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
         if not items or row < 0 or row >= len(items):
-            return -1, "", "캐주얼", "봄", "", gr.update(open=True)
+            return -1, empty_gallery, "", "캐주얼", "봄", "", gr.update(open=True)
         item = items[row]
         tags_str = ", ".join(item.get("tags") or [])
+        wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
+        gallery_html = _make_outfit_items_html(item.get("item_ids") or [], wardrobe_map)
         return (
             row,
+            gallery_html,
             item.get("name", ""),
             item.get("situation", "캐주얼"),
             item.get("season", "봄"),
@@ -1226,24 +1309,27 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     outfit_df.select(
         fn=_on_outfit_select,
-        inputs=[outfit_items_state],
-        outputs=[selected_outfit_idx, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags, outfit_edit_acc],
+        inputs=[outfit_items_state, wardrobe_items_state],
+        outputs=[selected_outfit_idx, outfit_items_gallery, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags, outfit_edit_acc],
     )
 
     # 코디 — 수정 저장
-    def _update_outfit(sel_idx, items, name, situation, season, tags_str):
+    def _update_outfit(sel_idx, items, wardrobe_items, name, situation, season, tags_str):
         if sel_idx < 0 or not items or sel_idx >= len(items):
-            return "수정할 항목을 먼저 선택해주세요.", [], []
+            return "수정할 항목을 먼저 선택해주세요.", [], [], ""
         item = items[sel_idx]
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
         storage.update_outfit(item["id"], {"name": name, "situation": situation, "season": season, "tags": tags})
         new_items = storage.load_outfits().get("outfits", [])
-        return f"✅ '{name}' 수정 완료", dashboard.get_outfit_table(new_items), new_items
+        # 갤러리 재생성 (item_ids 불변, wardrobe 업데이트 반영)
+        wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
+        gallery_html = _make_outfit_items_html(item.get("item_ids") or [], wardrobe_map)
+        return f"✅ '{name}' 수정 완료", dashboard.get_outfit_table(new_items), new_items, gallery_html
 
     save_edit_o_btn.click(
         fn=_update_outfit,
-        inputs=[selected_outfit_idx, outfit_items_state, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags],
-        outputs=[edit_o_result, outfit_df, outfit_items_state],
+        inputs=[selected_outfit_idx, outfit_items_state, wardrobe_items_state, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags],
+        outputs=[edit_o_result, outfit_df, outfit_items_state, outfit_items_gallery],
     )
 
     # 코디 — 삭제
