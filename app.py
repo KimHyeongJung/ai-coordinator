@@ -304,20 +304,7 @@ button.secondary:hover {
     color: var(--navy) !important;
 }
 
-/* ── label 외부 래퍼 초기화 (Soft 테마 파란 배지 제거) ── */
-.block label,
-.block > label,
-.block .label-wrap label {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 0 4px 0 !important;
-    display: block !important;
-    width: fit-content !important;
-}
-
-/* ── 폼 라벨 배지 (span/data-testid 타깃) ── */
+/* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
 .block label > span:first-child,
 .block .label-wrap > span,
 .block .label-wrap label > span:first-child,
@@ -330,10 +317,8 @@ button.secondary:hover {
     padding: 3px 9px !important;
     border-radius: 5px !important;
     display: inline-block !important;
-    margin-bottom: 0 !important;
+    margin-bottom: 4px !important;
     line-height: 1.4 !important;
-    border: none !important;
-    box-shadow: none !important;
 }
 
 /* ── 입력 필드 배경 #EEF2FA ── */
@@ -503,7 +488,7 @@ button.secondary:hover {
     text-align: center !important; padding: 4px 0 !important; width: 100% !important; box-shadow: none !important;
 }
 .stat-box label > span:first-child {
-    font-size: 10.5px !important; color: var(--text-hint) !important; font-weight: 600 !important;
+    font-size: 11px !important; color: var(--white) !important; font-weight: 600 !important;
     text-align: center !important; display: block !important; text-transform: uppercase !important;
     letter-spacing: 0.07em !important; margin-bottom: 6px !important;
 }
@@ -889,7 +874,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     )
                     with gr.Column():
                         description_input = gr.Textbox(
-                            label="직접 설명 (선택 — AI 분석 실패 시)",
+                            label="비고",
                             placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
                             lines=2,
                         )
@@ -911,7 +896,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     elem_classes=["result-box"],
                     lines=3, max_lines=20,
                 )
-                gr.HTML('<div class="section-header">옷장 목록</div>')
+                gr.HTML('<div class="section-header">저장된 의류 목록</div>')
                 wardrobe_df = gr.Dataframe(
                     headers=["이름", "카테고리", "색상", "사진", "계절", "사이즈", "등록일"],
                     label=None,
@@ -947,7 +932,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     )
 
                 outfit_result = gr.Textbox(
-                    label="생성된 코디", interactive=False,
+                    label="생성 결과", interactive=False,
                     elem_classes=["result-box"],
                     lines=3, max_lines=20,
                 )
