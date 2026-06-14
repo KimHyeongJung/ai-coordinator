@@ -610,6 +610,8 @@ button.secondary:hover {
     border: none !important;
     padding: 0 !important;
     box-shadow: none !important;
+    font-size: 28px !important;
+    color: #FFFFFF !important;
     flex: 0 0 54px !important;
     max-width: 54px !important;
     min-width: 54px !important;
