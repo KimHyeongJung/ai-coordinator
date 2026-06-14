@@ -374,31 +374,46 @@ button.secondary:hover {
 }
 
 /* ── 이미지 업로드 박스 ── */
-.image-box .wrap,
-.image-box .upload-container,
-.image-box > div > div {
+.image-box,
+.image-box > .block {
+    height: 100% !important;
+    align-self: stretch !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+/* 가장 바깥 점선만 */
+.image-box .wrap {
+    height: 100% !important;
+    min-height: 280px !important;
     border: 1.5px dashed #BFD0E8 !important;
     border-radius: var(--radius-lg) !important;
     background: #FAFCFF !important;
-    min-height: 210px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
     transition: border-color 0.2s, background 0.2s !important;
+    box-sizing: border-box !important;
 }
-.image-box .wrap:hover,
-.image-box .upload-container:hover {
-    border-color: var(--navy-mid) !important;
-    background: var(--navy-pale) !important;
-}
-.image-box,
-.image-box .block,
-.image-box > div {
-    background: transparent !important;
+.image-box .wrap:hover { border-color: var(--navy-mid) !important; background: var(--navy-pale) !important; }
+/* 내부 요소 점선 모두 제거 */
+.image-box .upload-container,
+.image-box .upload-container *,
+.image-box .wrap > div,
+.image-box .wrap > div > div,
+.image-box .wrap > div > div > div {
     border: none !important;
-    box-shadow: none !important;
+    background: transparent !important;
+}
+/* 업로드 텍스트 색상 */
+.image-box span,
+.image-box p,
+.image-box .wrap span,
+.image-box .wrap p {
+    color: #6B7484 !important;
 }
 
 /* ── 결과 텍스트 박스 (자동 확장) ── */
@@ -718,7 +733,7 @@ function patchUploadText() {
                 '<div style="width:48px;height:48px;background:#EEF2FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A6FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>' +
                 '</div>' +
-                '<p style="font-size:13px;font-weight:600;color:#1A2540;margin:0 0 5px 0;padding:0">의류 사진을 드래그하거나 클릭해서 업로드</p>' +
+                '<p style="font-size:13px;font-weight:600;color:#6B7484;margin:0 0 5px 0;padding:0">의류 사진을 드래그하거나 클릭해서 업로드</p>' +
                 '<span style="font-size:11.5px;color:#9BAAC4;margin:0;padding:0;display:block">AI가 카테고리 · 색상 · 재질을 자동 분류합니다</span>';
             return true;
         }
