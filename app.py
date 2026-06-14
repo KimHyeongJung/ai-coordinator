@@ -98,7 +98,7 @@ html, body { background: var(--surface) !important; }
 }
 footer { display: none !important; }
 
-/* ── 모든 블록 초기화 (다크/패딩/테두리/그림자 제거) ── */
+/* ── 모든 블록 배경 강제 흰색 (다크 배경 제거) ── */
 .block,
 .block > div,
 .form,
@@ -106,12 +106,6 @@ footer { display: none !important; }
 .wrap,
 .stretch {
     background: #FFFFFF !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-.block {
-    padding: 0 !important;
-    margin: 0 !important;
 }
 .tabitem,
 .tabitem > div,
@@ -550,25 +544,28 @@ button.secondary:hover {
     box-shadow: var(--shadow-sm) !important;
     overflow: hidden !important;
 }
-/* 유저 메시지 */
+/* 유저 메시지 — 배경 없음 */
 .chatbot-box [data-testid="user"] > div,
 .chatbot-box .message.user .bubble {
-    background: var(--navy) !important;
-    color: #fff !important;
-    border-radius: 14px 14px 4px 14px !important;
+    background: transparent !important;
+    color: var(--text) !important;
     border: none !important;
+    box-shadow: none !important;
 }
-/* 봇 메시지 - 회색 계열 텍스트 */
+/* 봇 메시지 — 배경 없음 */
 .chatbot-box [data-testid="bot"] > div,
 .chatbot-box .message.bot .bubble {
-    background: #FFFFFF !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 14px 14px 14px 4px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 .chatbot-box [data-testid="bot"] p,
 .chatbot-box [data-testid="bot"] li,
 .chatbot-box [data-testid="bot"] span,
 .chatbot-box [data-testid="bot"] div { color: #5A6A8A !important; }
+.chatbot-box [data-testid="user"] p,
+.chatbot-box [data-testid="user"] span,
+.chatbot-box [data-testid="user"] div { color: var(--text) !important; }
 .chatbot-box [data-testid="bot"] strong,
 .chatbot-box [data-testid="bot"] b { color: var(--navy-light) !important; font-weight: 600 !important; }
 
