@@ -1651,10 +1651,11 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             return ("삭제할 항목을 먼저 선택해주세요.",
                     gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(open=False))
+                    gr.update(open=False), gr.update())
         item = items[sel_idx]
         storage.delete_outfit(item["id"])
         new_items = storage.load_outfits().get("outfits", [])
+        outfit_names = [o.get("name", "") for o in new_items if o.get("name")]
         return (
             f"✅ '{item.get('name', '')}' 삭제 완료",
             dashboard.get_outfit_table(new_items),
@@ -1663,6 +1664,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             _EMPTY_GALLERY_HTML,
             "", [], [], "",
             gr.update(open=False),
+            gr.update(choices=outfit_names, value=None),
         )
 
     delete_o_btn.click(
@@ -1673,6 +1675,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             selected_outfit_idx, outfit_items_gallery,
             edit_o_name, edit_o_situation, edit_o_season, edit_o_tags,
             outfit_edit_acc,
+            daily_outfit_select,
         ],
     )
 
