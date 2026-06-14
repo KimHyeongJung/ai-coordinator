@@ -787,13 +787,14 @@ button.secondary:hover {
 
 /* 좌측 가이드 패널 — 컬럼 자체는 콘텐츠 높이에 맞게 늘어남 */
 #left-guide {
-    border-right: 1px solid #D8E2F0 !important;
+    background: #EEF2FA !important;
+    border-right: none !important;
     position: relative !important;
     overflow: visible !important;
     flex-shrink: 0 !important;
 }
-#left-guide > .block { background: transparent !important; border: none !important; padding: 0 !important; height: 100% !important; }
-#left-guide .block { background: transparent !important; border: none !important; }
+#left-guide > .block { background: #EEF2FA !important; border: none !important; padding: 0 !important; height: 100% !important; }
+#left-guide .block { background: #EEF2FA !important; border: none !important; }
 
 /* #usage-guide 만 sticky — 컬럼 안에서 뷰포트에 고정되다가 컬럼 끝에서 자연스럽게 멈춤 */
 #usage-guide {
