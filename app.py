@@ -504,7 +504,7 @@ button.secondary:hover {
     -webkit-text-fill-color: #1A2540 !important;
 }
 .stat-box label > span:first-child {
-    font-size: 11px !important; color: var(--white) !important; font-weight: 600 !important;
+    font-size: 18px !important; color: var(--white) !important; font-weight: 600 !important;
     text-align: center !important; display: block !important; text-transform: uppercase !important;
     letter-spacing: 0.07em !important; margin-bottom: 6px !important;
 }
