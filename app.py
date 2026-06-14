@@ -414,11 +414,34 @@ button.secondary:hover {
     border: none !important;
     background: transparent !important;
 }
-/* 업로드 텍스트 색상 */
-.image-box span,
-.image-box p,
+/* 라벨 앞 아이콘(박스/SVG) 제거 */
+.image-box label svg,
+.image-box label > span:first-child svg,
+.image-box label > span:first-child > *:first-child:not(svg + *) {
+    display: none !important;
+}
+/* 이미지 라벨 배지: #1B3A6B, 11px, 흰 텍스트 */
+.image-box label > span:first-child {
+    background: #1B3A6B !important;
+    color: #FFFFFF !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    padding: 3px 9px !important;
+    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    margin-bottom: 4px !important;
+}
+/* 업로드 드롭존 텍스트 #6B7484 */
 .image-box .wrap span,
-.image-box .wrap p {
+.image-box .wrap p,
+.image-box .wrap > div span,
+.image-box .wrap > div p,
+.image-box .upload-container span,
+.image-box .upload-container p,
+.image-box span,
+.image-box p {
     color: #6B7484 !important;
 }
 
