@@ -677,8 +677,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Base()) as dem
                                 description_input = gr.Textbox(
                                     label="직접 설명 (선택 — AI 분석 실패 시)",
                                     placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
-                                    lines=2,
-                                    color="#EEF2FA"
+                                    lines=2
                                 )
                                 size_input = gr.Textbox(
                                     label="사이즈", placeholder="S, M, L, 250 등"
