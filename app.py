@@ -1169,7 +1169,7 @@ USAGE_GUIDE_HTML = """
 with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as demo:
 
     with gr.Row(elem_id="main-layout"):
-        with gr.Column(scale=1, min_width=280, elem_id="left-guide"):
+        with gr.Column(scale=1, min_width=0, elem_id="left-guide"):
             gr.HTML(USAGE_GUIDE_HTML)
         with gr.Column(scale=2, min_width=0, elem_id="right-service"):
             gr.HTML(TOP_NAV_HTML)
