@@ -565,7 +565,7 @@ button.secondary:hover {
 .chatbot-box [data-testid="bot"] div { color: #5A6A8A !important; }
 .chatbot-box [data-testid="user"] p,
 .chatbot-box [data-testid="user"] span,
-.chatbot-box [data-testid="user"] div { color: var(--text) !important; }
+.chatbot-box [data-testid="user"] div { color: #FFFFFF !important; }
 .chatbot-box [data-testid="bot"] strong,
 .chatbot-box [data-testid="bot"] b { color: var(--navy-light) !important; font-weight: 600 !important; }
 
