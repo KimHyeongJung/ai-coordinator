@@ -947,6 +947,45 @@ setInterval(autoResizeResultBoxes, 800);
 
 _gr_major = int(gr.__version__.split(".")[0])
 
+
+def _make_outfit_gallery_html(item_ids: list, wardrobe_map: dict) -> str:
+    """코디의 착용 의류 이미지 카드 HTML 생성 (데일리룩 탭용)."""
+    if not item_ids:
+        return '<div style="color:#9BAAC4;font-size:12px;padding:12px 0">착용 의류 없음</div>'
+    cards = []
+    for iid in item_ids:
+        item = wardrobe_map.get(iid)
+        if not item:
+            continue
+        name = item.get("name", iid)
+        img_url = item.get("image_path")
+        if img_url:
+            img_part = (
+                f'<img src="{img_url}" style="width:100%;height:120px;'
+                f'object-fit:cover;border-radius:10px;display:block" />'
+            )
+        else:
+            img_part = (
+                '<div style="width:100%;height:120px;background:#EEF2FA;border-radius:10px;'
+                'display:flex;align-items:center;justify-content:center;font-size:26px">👔</div>'
+            )
+        cards.append(
+            f'<div style="flex:0 0 130px;min-width:130px;text-align:center">'
+            f'{img_part}'
+            f'<div style="font-size:11px;color:#5A6A8A;margin-top:6px;'
+            f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{name}</div>'
+            f'</div>'
+        )
+    if not cards:
+        return '<div style="color:#9BAAC4;font-size:12px;padding:12px 0">착용 의류 정보 없음</div>'
+    return (
+        '<div style="display:flex;gap:12px;flex-wrap:nowrap;overflow-x:auto;'
+        'padding:10px 0 14px;scrollbar-width:thin">'
+        + "".join(cards)
+        + "</div>"
+    )
+
+
 # ── Blocks 레이아웃 ───────────────────────────────────────────────────────────
 with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as demo:
 
@@ -1132,7 +1171,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 <div class="topbar" style="position:sticky;top:58px;z-index:9">
                     <span class="topbar-title">AI 데일리룩 추천</span>
                     <div class="topbar-meta">
-                        <span class="topbar-badge">Open-Meteo 날씨</span>
+                        <span class="topbar-badge">Qwen2.5 Vision</span>
                     </div>
                 </div>
             """)
@@ -1162,6 +1201,14 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 clear_btn = gr.Button(
                     "대화 초기화", elem_classes=["btn-secondary"]
                 )
+                gr.HTML('<div class="section-header">코디 상세 보기</div>')
+                daily_outfit_select = gr.Dropdown(
+                    label="코디 선택 (AI가 추천한 코디명을 여기서 선택하면 이미지를 확인할 수 있습니다)",
+                    choices=[],
+                    interactive=True,
+                    elem_classes=["daily-outfit-select"],
+                )
+                daily_outfit_gallery = gr.HTML(value="")
 
     # ── 이벤트 연결 ──────────────────────────────────────────────────────────
 
@@ -1481,11 +1528,29 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         outputs=[chatbot, chat_input],
     )
 
+    # 데일리룩 — 코디 선택 시 이미지 갤러리 표시
+    def _show_daily_outfit(outfit_name, wardrobe_items):
+        if not outfit_name:
+            return ""
+        outfits = storage.load_outfits().get("outfits", [])
+        target = next((o for o in outfits if o.get("name") == outfit_name), None)
+        if not target:
+            return ""
+        wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
+        return _make_outfit_gallery_html(target.get("item_ids") or [], wardrobe_map)
+
+    daily_outfit_select.change(
+        fn=_show_daily_outfit,
+        inputs=[daily_outfit_select, wardrobe_items_state],
+        outputs=[daily_outfit_gallery],
+    )
+
     # 앱 로드 시 초기 데이터
     def _initial_load():
         w_items = storage.load_wardrobe().get("items", [])
         o_items = storage.load_outfits().get("outfits", [])
         stats = dashboard.get_stats()
+        outfit_names = [o.get("name", "") for o in o_items if o.get("name")]
         return (
             dashboard.get_wardrobe_table(w_items),
             w_items,
@@ -1496,6 +1561,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             stats["total_items"],
             stats["total_outfits"],
             dashboard.build_stats_cards(stats),
+            gr.update(choices=outfit_names, value=None),
         )
 
     demo.load(
@@ -1510,6 +1576,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             total_items_num,
             total_outfits_num,
             stats_html,
+            daily_outfit_select,
         ],
     )
 

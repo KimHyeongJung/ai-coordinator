@@ -94,9 +94,11 @@ NEVER use Chinese characters (漢字/中文/汉字). If you detect yourself writ
 
 현재 날씨: {weather_info}
 사용자 옷장: {wardrobe_summary}
+저장된 코디 목록: {outfit_names}
 
 규칙:
-- 반드시 옷장에 있는 의류만 조합해서 추천
+- 저장된 코디 목록에 코디가 있으면 반드시 정확한 코디명을 **굵게** 표시하여 추천에 포함할 것 (예: **블랙 캐주얼 코디**)
+- 코디 목록이 없으면 옷장에 있는 의류를 조합해서 추천
 - 날씨와 상황에 맞는 레이어링 팁 포함
 - 오직 한국어와 영어만 사용. 한자(漢字·中文) 절대 금지.
 - 추천 코디는 구체적인 아이템명으로 설명
@@ -276,6 +278,7 @@ def recommend_daily_look(
     """
     weather = get_weather()
     items = storage.load_wardrobe().get("items", [])
+    outfits = storage.load_outfits().get("outfits", [])
 
     weather_info = (
         f"{weather['date']} 날씨: {weather['weather_desc']}, "
@@ -287,15 +290,22 @@ def recommend_daily_look(
     wardrobe_summary = (
         ", ".join(
             f"{item['name']}({item.get('category', '')})"
-            for item in items[:20]  # 토큰 오버플로우 방지
+            for item in items[:20]
         )
         if items
         else "등록된 의류 없음"
     )
 
+    outfit_names = (
+        ", ".join(f'"{o.get("name", "")}"' for o in outfits[:15] if o.get("name"))
+        if outfits
+        else "저장된 코디 없음"
+    )
+
     system_content = DAILY_SYSTEM_PROMPT.format(
         weather_info=weather_info,
         wardrobe_summary=wardrobe_summary,
+        outfit_names=outfit_names,
     )
 
     # Gradio messages 포맷 → LangChain 메시지 포맷 변환
