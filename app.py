@@ -5,6 +5,7 @@ AI Closet — 스마트 AI 옷장 관리 서비스
 
 from __future__ import annotations
 
+import json
 import os
 
 import gradio as gr
@@ -1336,13 +1337,21 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
         gallery_html = _make_outfit_items_html(item.get("item_ids") or [], wardrobe_map)
 
-        situation = item.get("situation") or []
-        if isinstance(situation, str):
-            situation = [s.strip() for s in situation.split(",") if s.strip()]
+        def _to_list(val):
+            if not val:
+                return []
+            if isinstance(val, list):
+                return val
+            s = str(val).strip()
+            if s.startswith("["):
+                try:
+                    return json.loads(s)
+                except Exception:
+                    pass
+            return [v.strip() for v in s.split(",") if v.strip()]
 
-        season = item.get("season") or []
-        if isinstance(season, str):
-            season = [s.strip() for s in season.split(",") if s.strip()]
+        situation = _to_list(item.get("situation"))
+        season = _to_list(item.get("season"))
 
         return (
             row,
@@ -1368,8 +1377,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
         storage.update_outfit(item["id"], {
             "name": name,
-            "situation": situation if isinstance(situation, list) else [situation] if situation else [],
-            "season": season if isinstance(season, list) else [season] if season else [],
+            "situation": situation if isinstance(situation, list) else ([situation] if situation else []),
+            "season": season if isinstance(season, list) else ([season] if season else []),
             "tags": tags,
         })
         new_items = storage.load_outfits().get("outfits", [])

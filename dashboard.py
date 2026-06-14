@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 
 import storage
@@ -81,8 +82,15 @@ def get_outfit_table(outfits=None, wardrobe_items=None) -> list[list]:
         if val is None:
             return "-"
         if isinstance(val, list):
-            return ", ".join(val) if val else "-"
+            return ", ".join(str(v) for v in val) if val else "-"
         s = str(val).strip()
+        if s.startswith("["):
+            try:
+                parsed = json.loads(s)
+                if isinstance(parsed, list):
+                    return ", ".join(str(v) for v in parsed) if parsed else "-"
+            except Exception:
+                pass
         return s if s else "-"
 
     rows = []
