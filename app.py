@@ -385,7 +385,8 @@ button.secondary:hover {
     height: 100% !important;
     align-self: stretch !important;
     background: transparent !important;
-    border: none !important;
+    border: 1.5px dashed #BFD0E8 !important;
+    border-color: var(--navy-mid) !important;
     box-shadow: none !important;
     padding: 0 !important;
 }
@@ -394,6 +395,7 @@ button.secondary:hover {
     height: 100% !important;
     min-height: 280px !important;
     border: 1.5px dashed #BFD0E8 !important;
+    border-color: var(--navy-mid) !important;
     border-radius: var(--radius-lg) !important;
     background: #FAFCFF !important;
     display: flex !important;
