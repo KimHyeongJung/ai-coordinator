@@ -1,6 +1,6 @@
 """
 AI Closet — 스마트 AI 옷장 관리 서비스
-HTML 사이드바 + Tabs 전환 방식 (HF Spaces 호환)
+상단 네비게이션 바 + Tabs 전환 방식 (HF Spaces 호환)
 """
 
 from __future__ import annotations
@@ -45,6 +45,7 @@ load_dotenv()
 
 # ── CSS ──────────────────────────────────────────────────────────────────────
 CUSTOM_CSS = """
+/* ── Design tokens ── */
 :root {
     --navy:         #1B3A6B;
     --navy-light:   #2A52A0;
@@ -63,6 +64,29 @@ CUSTOM_CSS = """
     --shadow-card:  0 3px 12px rgba(27,58,107,0.09), 0 0 0 1px rgba(27,58,107,0.05);
 }
 
+/* ── Gradio 다크 테마 변수 강제 오버라이드 ── */
+.gradio-container {
+    --block-background-fill: #FFFFFF;
+    --input-background-fill: #EEF2FA;
+    --body-background-fill: #F7F9FC;
+    --background-fill-primary: #FFFFFF;
+    --background-fill-secondary: #F7F9FC;
+    --panel-background-fill: #FFFFFF;
+    --panel-border-color: #D8E2F0;
+    --border-color-primary: #D8E2F0;
+    --border-color-accent: #2A52A0;
+    --chatbot-background: #FFFFFF;
+    --button-primary-background-fill: #2A52A0;
+    --button-primary-background-fill-hover: #1B3A6B;
+    --button-primary-text-color: #FFFFFF;
+    --button-secondary-background-fill: #FFFFFF;
+    --button-secondary-background-fill-hover: #EEF2FA;
+    --button-secondary-text-color: #1A2540;
+    --button-secondary-border-color: #D8E2F0;
+    --color-background-primary: #FFFFFF;
+    --color-background-secondary: #F7F9FC;
+}
+
 /* ── Global ── */
 html, body { background: var(--surface) !important; }
 .gradio-container {
@@ -74,44 +98,53 @@ html, body { background: var(--surface) !important; }
 }
 footer { display: none !important; }
 
-/* ── Main row ── */
-#main-row {
-    gap: 0 !important;
-    align-items: flex-start !important;
-    flex-wrap: nowrap !important;
+/* ── 모든 블록 배경 강제 흰색 (다크 배경 제거) ── */
+.block,
+.block > div,
+.form,
+.panel,
+.wrap,
+.stretch {
+    background: #FFFFFF !important;
+}
+.tabitem,
+.tabitem > div,
+.tabitem .block {
+    background: #FFFFFF !important;
+    border: none !important;
+}
+.tab-content {
+    background: var(--surface) !important;
+}
+.tab-content > .block,
+.tab-content .block {
+    background: #FFFFFF !important;
 }
 
-/* ── Sidebar ── */
-#sidebar-col,
-#sidebar-col > .block,
-#sidebar-col .block {
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    background: var(--navy) !important;
-    box-shadow: none !important;
-    gap: 0 !important;
-    border-radius: 0 !important;
-}
-#aic-sidebar {
+/* ── 상단 네비게이션 바 ── */
+#aic-topnav {
     position: sticky !important;
     top: 0 !important;
-    height: 100vh !important;
-    overflow: hidden !important;
+    z-index: 100 !important;
+    background: #FFFFFF !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 0 28px !important;
+    height: 58px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    box-shadow: 0 1px 0 rgba(27,58,107,0.06), 0 2px 8px rgba(27,58,107,0.04) !important;
+    gap: 16px !important;
 }
-
-/* ── Content col ── */
-#content-col,
-#content-col > .block,
-#content-col > .gap {
-    padding: 0 !important;
-    gap: 0 !important;
+#aic-topnav .block,
+#aic-topnav > .block {
+    background: transparent !important;
     border: none !important;
-    background: var(--surface) !important;
-    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
-/* ── 탭 네비 완전히 숨기기 (CSS로 처리, JS 불필요) ── */
+/* ── 탭 네비 완전히 숨기기 ── */
 .tab-nav,
 .tab-nav * {
     display: none !important;
@@ -121,24 +154,58 @@ footer { display: none !important; }
     pointer-events: none !important;
 }
 
-/* ── 탭 컨테이너 & 탭 아이템 ── */
+/* ── 탭 컨테이너 ── */
 #content-tabs {
     background: transparent !important;
     border: none !important;
     gap: 0 !important;
     padding: 0 !important;
+    box-shadow: none !important;
 }
 #content-tabs > div {
     padding: 0 !important;
     gap: 0 !important;
+    background: transparent !important;
 }
 .tabitem {
     padding: 0 !important;
     border: none !important;
-    background: var(--surface) !important;
 }
 
-/* ── Topbar ── */
+/* ── 탭 콘텐츠 영역 ── */
+.tab-content {
+    padding: 20px 24px 32px !important;
+    gap: 14px !important;
+    border: none !important;
+}
+
+/* ── 섹션 헤더 ── */
+.section-header {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+    padding: 16px 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    background: transparent !important;
+}
+.section-header::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 13px;
+    background: var(--navy);
+    border-radius: 2px;
+    flex-shrink: 0;
+    opacity: 0.65;
+}
+
+/* ── 페이지 상단 topbar ── */
 .topbar {
     background: var(--white) !important;
     border-bottom: 1px solid var(--border) !important;
@@ -155,11 +222,7 @@ footer { display: none !important; }
     color: var(--text);
     letter-spacing: -0.015em;
 }
-.topbar-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+.topbar-meta { display: flex; align-items: center; gap: 8px; }
 .topbar-badge {
     background: var(--navy-pale);
     color: var(--navy-mid);
@@ -180,42 +243,22 @@ footer { display: none !important; }
     letter-spacing: 0.01em;
 }
 
-/* ── 콘텐츠 영역 ── */
-.tab-content {
-    padding: 20px 24px 32px !important;
-    gap: 14px !important;
-    background: var(--surface) !important;
-    border: none !important;
+/* ── 버튼 (밝은 네이비 #2A52A0) ── */
+button,
+.btn button,
+.block button {
+    background: var(--white) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: all 0.15s !important;
 }
-
-/* ── 섹션 헤더 ── */
-.section-header {
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    color: var(--text-muted) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.07em !important;
-    padding: 16px 0 10px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    border-bottom: none !important;
-    margin-bottom: 0 !important;
-}
-.section-header::before {
-    content: '';
-    display: inline-block;
-    width: 3px;
-    height: 13px;
-    background: var(--navy);
-    border-radius: 2px;
-    flex-shrink: 0;
-    opacity: 0.65;
-}
-
-/* ── 버튼 ── */
-.btn-primary button {
-    background: var(--navy) !important;
+.btn-primary button,
+button.primary,
+.block button.primary {
+    background: var(--navy-light) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 8px !important;
@@ -223,31 +266,36 @@ footer { display: none !important; }
     font-weight: 500 !important;
     padding: 9px 20px !important;
     letter-spacing: -0.01em !important;
+    box-shadow: 0 1px 4px rgba(42,82,160,0.28) !important;
     transition: background 0.15s, transform 0.1s, box-shadow 0.15s !important;
-    box-shadow: 0 1px 4px rgba(27,58,107,0.22) !important;
 }
-.btn-primary button:hover {
-    background: var(--navy-light) !important;
+.btn-primary button:hover,
+button.primary:hover {
+    background: var(--navy) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 12px rgba(27,58,107,0.28) !important;
 }
-.btn-primary button:active {
+.btn-primary button:active,
+button.primary:active {
     transform: translateY(0) !important;
     box-shadow: 0 1px 3px rgba(27,58,107,0.18) !important;
 }
-.btn-secondary button {
+.btn-secondary button,
+button.secondary,
+.block button.secondary {
     background: var(--white) !important;
-    color: var(--text-muted) !important;
-    border: 1px solid var(--border) !important;
+    color: var(--navy-light) !important;
+    border: 1.5px solid var(--navy-light) !important;
     border-radius: 8px !important;
     font-size: 13px !important;
-    font-weight: 400 !important;
+    font-weight: 500 !important;
     transition: all 0.15s !important;
 }
-.btn-secondary button:hover {
-    border-color: var(--navy-mid) !important;
-    color: var(--navy) !important;
+.btn-secondary button:hover,
+button.secondary:hover {
     background: var(--navy-pale) !important;
+    border-color: var(--navy) !important;
+    color: var(--navy) !important;
 }
 
 /* ── 폼 라벨 ── */
@@ -276,7 +324,6 @@ footer { display: none !important; }
     font-size: 13px !important;
     background: var(--white) !important;
     color: var(--text) !important;
-    transition: border-color 0.15s, box-shadow 0.15s !important;
 }
 .block input:focus, .block textarea:focus {
     border-color: var(--navy-mid) !important;
@@ -285,7 +332,7 @@ footer { display: none !important; }
     outline: none !important;
 }
 
-/* ── 드롭다운 선택 영역 배경 #EEF2FA ── */
+/* ── 드롭다운 ── */
 .block .wrap-inner {
     border-radius: 8px !important;
     border-color: var(--border) !important;
@@ -296,7 +343,6 @@ footer { display: none !important; }
 .block .wrap-inner .token span {
     color: var(--text) !important;
 }
-/* 드롭다운 열린 목록은 흰 배경 유지 (가독성) */
 .block ul.options {
     background: var(--white) !important;
     border: 1px solid var(--border) !important;
@@ -349,7 +395,7 @@ footer { display: none !important; }
     box-shadow: none !important;
 }
 
-/* ── 결과 텍스트 박스 (자동 확장 + #EEF2FA) ── */
+/* ── 결과 텍스트 박스 (자동 확장) ── */
 .result-box textarea {
     background: #EEF2FA !important;
     border: 1px solid var(--border) !important;
@@ -373,121 +419,57 @@ footer { display: none !important; }
     overflow: hidden !important;
     text-align: center !important;
 }
-.stat-box > .block {
-    background: var(--white) !important;
-    border: none !important;
-    padding: 22px 16px 18px !important;
-}
+.stat-box > .block { background: var(--white) !important; border: none !important; padding: 22px 16px 18px !important; }
 .stat-box input[type="number"] {
-    font-size: 36px !important;
-    font-weight: 700 !important;
-    color: var(--navy) !important;
-    border: none !important;
-    background: transparent !important;
-    text-align: center !important;
-    padding: 4px 0 !important;
-    width: 100% !important;
-    box-shadow: none !important;
+    font-size: 36px !important; font-weight: 700 !important; color: var(--navy) !important;
+    border: none !important; background: transparent !important;
+    text-align: center !important; padding: 4px 0 !important; width: 100% !important; box-shadow: none !important;
 }
 .stat-box label > span:first-child {
-    font-size: 10.5px !important;
-    color: var(--text-hint) !important;
-    font-weight: 600 !important;
-    text-align: center !important;
-    display: block !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.07em !important;
-    margin-bottom: 6px !important;
+    font-size: 10.5px !important; color: var(--text-hint) !important; font-weight: 600 !important;
+    text-align: center !important; display: block !important; text-transform: uppercase !important;
+    letter-spacing: 0.07em !important; margin-bottom: 6px !important;
 }
 
 /* ── 통계 플랫 카드 ── */
-.sc-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 4px 0;
-}
-.sc-section {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 14px 16px;
-    box-shadow: var(--shadow-sm);
-}
-.sc-title {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin-bottom: 10px;
-}
-.sc-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.sc-card {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--navy-pale);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 7px 13px;
-}
-.sc-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-.sc-val {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--navy);
-}
+.sc-wrap { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+.sc-section { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.sc-title { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.sc-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.sc-card { display: inline-flex; align-items: center; gap: 7px; background: var(--navy-pale); border: 1px solid var(--border); border-radius: 8px; padding: 7px 13px; }
+.sc-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.sc-val { font-size: 14px; font-weight: 700; color: var(--navy); }
 
-/* ── 날씨 카드 (HTML) ── */
+/* ── 날씨 카드 ── */
 .weather-card {
     background: linear-gradient(135deg, #1D3E72 0%, #2A52A0 100%);
-    border-radius: 16px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(27,58,107,0.25);
+    border-radius: 16px; padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    color: #fff; box-shadow: 0 4px 20px rgba(27,58,107,0.25);
 }
-.weather-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
+.weather-left { display: flex; align-items: center; gap: 16px; }
 .weather-emoji { font-size: 46px; line-height: 1; }
-.weather-temp {
-    font-size: 34px;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-}
-.weather-sub {
-    font-size: 12px;
-    color: rgba(255,255,255,0.65);
-    margin-top: 4px;
-    letter-spacing: 0.01em;
-}
-.weather-right {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    align-items: flex-end;
-}
+.weather-temp { font-size: 34px; font-weight: 700; color: #fff; line-height: 1.1; letter-spacing: -0.03em; }
+.weather-sub { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 4px; letter-spacing: 0.01em; }
+.weather-right { text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
 .weather-stat { font-size: 11.5px; color: rgba(255,255,255,0.68); }
 .weather-source { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }
 
-/* ── 챗봇 ── */
+/* ── 챗봇 (강제 흰 배경) ── */
+.chatbot-box,
+.chatbot-box > *,
+.chatbot-box .block,
+.chatbot-box .wrap,
+.chatbot-box [data-testid="chatbot"],
+.chatbot-box [data-testid="chatbot"] > *,
+[data-testid="chatbot"],
+[data-testid="chatbot"] > div,
+[data-testid="chatbot"] .wrap,
+[data-testid="chatbot"] .message-wrap,
+[data-testid="chatbot"] .bubble-wrap {
+    background: #FFFFFF !important;
+    border-color: var(--border) !important;
+}
 .chatbot-box > div,
 .chatbot-box .wrap {
     border-radius: var(--radius-lg) !important;
@@ -496,6 +478,7 @@ footer { display: none !important; }
     box-shadow: var(--shadow-sm) !important;
     overflow: hidden !important;
 }
+/* 유저 메시지 */
 .chatbot-box [data-testid="user"] > div,
 .chatbot-box .message.user .bubble {
     background: var(--navy) !important;
@@ -503,7 +486,7 @@ footer { display: none !important; }
     border-radius: 14px 14px 4px 14px !important;
     border: none !important;
 }
-/* Bot 메시지: 흰 배경 + 회색 계열 텍스트 */
+/* 봇 메시지 - 회색 계열 텍스트 */
 .chatbot-box [data-testid="bot"] > div,
 .chatbot-box .message.bot .bubble {
     background: #FFFFFF !important;
@@ -513,46 +496,23 @@ footer { display: none !important; }
 .chatbot-box [data-testid="bot"] p,
 .chatbot-box [data-testid="bot"] li,
 .chatbot-box [data-testid="bot"] span,
-.chatbot-box [data-testid="bot"] div {
-    color: #5A6A8A !important;
-}
+.chatbot-box [data-testid="bot"] div { color: #5A6A8A !important; }
 .chatbot-box [data-testid="bot"] strong,
-.chatbot-box [data-testid="bot"] b {
-    color: var(--navy-light) !important;
-    font-weight: 600 !important;
-}
+.chatbot-box [data-testid="bot"] b { color: var(--navy-light) !important; font-weight: 600 !important; }
 
-/* ── 채팅 입력 (Pill 형태) ── */
-.chat-input-row {
-    align-items: center !important;
-    gap: 10px !important;
-}
+/* ── 채팅 입력 ── */
+.chat-input-row { align-items: center !important; gap: 10px !important; }
 .chat-input-row > .block,
-.chat-input-row > div {
-    margin: 0 !important;
-    padding: 0 !important;
-}
+.chat-input-row > div { margin: 0 !important; padding: 0 !important; background: transparent !important; }
 #chat-input > .block,
-#chat-input .block {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-}
+#chat-input .block { background: transparent !important; border: none !important; padding: 0 !important; box-shadow: none !important; }
 #chat-input textarea,
 #chat-input input[type="text"] {
-    border-radius: 50px !important;
-    padding: 12px 22px !important;
-    border: 1.5px solid var(--border) !important;
-    background: #EEF2FA !important;
-    color: var(--text) !important;
-    font-size: 13px !important;
-    resize: none !important;
-    min-height: 46px !important;
-    max-height: 46px !important;
-    line-height: 1.5 !important;
-    overflow-y: hidden !important;
-    box-shadow: none !important;
+    border-radius: 50px !important; padding: 12px 22px !important;
+    border: 1.5px solid var(--border) !important; background: #EEF2FA !important;
+    color: var(--text) !important; font-size: 13px !important;
+    resize: none !important; min-height: 46px !important; max-height: 46px !important;
+    line-height: 1.5 !important; overflow-y: hidden !important; box-shadow: none !important;
 }
 #chat-input textarea:focus,
 #chat-input input[type="text"]:focus {
@@ -561,17 +521,20 @@ footer { display: none !important; }
     outline: none !important;
 }
 
-/* ── 전송 버튼 (원형) ── */
+/* ── 전송 버튼 (원형, 항상 보임) ── */
 #chat-send-btn,
-#chat-send-btn > .block {
+#chat-send-btn > .block,
+#chat-send-btn > div {
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
-    flex-shrink: 0 !important;
     box-shadow: none !important;
+    flex: 0 0 54px !important;
+    max-width: 54px !important;
+    min-width: 46px !important;
 }
 #chat-send-btn button {
-    background: var(--navy) !important;
+    background: var(--navy-light) !important;
     color: #fff !important;
     border: none !important;
     border-radius: 50% !important;
@@ -583,55 +546,22 @@ footer { display: none !important; }
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    box-shadow: 0 2px 8px rgba(27,58,107,0.3) !important;
+    box-shadow: 0 2px 8px rgba(42,82,160,0.35) !important;
     transition: background 0.15s, transform 0.1s !important;
     cursor: pointer !important;
 }
-#chat-send-btn button:hover { background: var(--navy-light) !important; transform: scale(1.06) !important; }
+#chat-send-btn button:hover { background: var(--navy) !important; transform: scale(1.06) !important; }
 #chat-send-btn button:active { transform: scale(0.97) !important; }
 
-/* ── 데이터프레임 배경 #EEF2FA ── */
-.table-box {
-    background: #EEF2FA !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-lg) !important;
-    overflow: hidden !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-.table-box > .block {
-    border: none !important;
-    padding: 0 !important;
-    background: transparent !important;
-}
-.table-box table {
-    border-collapse: collapse !important;
-    width: 100% !important;
-}
+/* ── 데이터프레임 배경 ── */
+.table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; box-shadow: var(--shadow-sm) !important; }
+.table-box > .block { border: none !important; padding: 0 !important; background: transparent !important; }
+.table-box table { border-collapse: collapse !important; width: 100% !important; }
 .table-box table thead tr { background: var(--navy) !important; }
-.table-box table thead th {
-    color: rgba(255,255,255,0.85) !important;
-    font-weight: 500 !important;
-    font-size: 11.5px !important;
-    padding: 11px 14px !important;
-    border: none !important;
-    letter-spacing: 0.03em !important;
-    white-space: nowrap !important;
-}
-.table-box table tbody tr td {
-    font-size: 12.5px !important;
-    color: var(--text) !important;
-    padding: 9px 14px !important;
-    background: #EEF2FA !important;
-    border-bottom: 1px solid var(--border-light) !important;
-    border-right: none !important;
-    border-left: none !important;
-    border-top: none !important;
-}
+.table-box table thead th { color: rgba(255,255,255,0.85) !important; font-weight: 500 !important; font-size: 11.5px !important; padding: 11px 14px !important; border: none !important; letter-spacing: 0.03em !important; white-space: nowrap !important; }
+.table-box table tbody tr td { font-size: 12.5px !important; color: var(--text) !important; padding: 9px 14px !important; background: #EEF2FA !important; border-bottom: 1px solid var(--border-light) !important; border-right: none !important; border-left: none !important; border-top: none !important; }
 .table-box table tbody tr:last-child td { border-bottom: none !important; }
-.table-box table tbody tr:hover td {
-    background: #D8E2F0 !important;
-    transition: background 0.12s !important;
-}
+.table-box table tbody tr:hover td { background: #D8E2F0 !important; transition: background 0.12s !important; }
 
 /* ── 스크롤바 ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -640,116 +570,108 @@ footer { display: none !important; }
 ::-webkit-scrollbar-thumb:hover { background: var(--navy-mid); }
 """
 
-# ── 사이드바 HTML ─────────────────────────────────────────────────────────────
-SIDEBAR_HTML = """
+# ── 상단 네비게이션 HTML ──────────────────────────────────────────────────────
+TOP_NAV_HTML = """
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
-<div id="aic-sidebar" style="
-    background: linear-gradient(180deg, #1D3E72 0%, #1B3A6B 100%);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-">
+
+<nav id="aic-topnav">
   <!-- 로고 -->
-  <div style="padding:22px 18px 18px; border-bottom:1px solid rgba(255,255,255,.09)">
-    <div style="display:flex; align-items:center; gap:11px">
-      <div style="
-        width:36px; height:36px;
-        background:rgba(255,255,255,.15);
-        border-radius:9px;
-        display:flex; align-items:center; justify-content:center;
-        flex-shrink:0;
-        border:1px solid rgba(255,255,255,.1);
-      ">
-        <i class="ti ti-shirt" style="color:#fff; font-size:18px"></i>
-      </div>
-      <div>
-        <div style="color:#fff; font-size:14px; font-weight:600; line-height:1.25; letter-spacing:-0.02em">AI Closet</div>
-        <div style="color:rgba(255,255,255,.42); font-size:10px; margin-top:2px; letter-spacing:0.01em">스마트 옷장 관리</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 메뉴 -->
-  <div style="padding:14px 10px; flex:1">
+  <div style="display:flex;align-items:center;gap:11px;flex-shrink:0">
     <div style="
-      font-size:9px; font-weight:700;
-      color:rgba(255,255,255,.22);
-      text-transform:uppercase; letter-spacing:.12em;
-      padding:0 8px 10px;
-    ">메뉴</div>
-
-    <div class="sb-item active" id="sb-0" onclick="sbGo(0)">
-      <i class="ti ti-hanger sb-icon" aria-hidden="true"></i>
-      <span>옷장</span>
+      width:36px;height:36px;
+      background:linear-gradient(135deg,#1B3A6B,#2A52A0);
+      border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+      box-shadow:0 2px 8px rgba(27,58,107,0.3)
+    ">
+      <i class="ti ti-shirt" style="color:#fff;font-size:18px"></i>
     </div>
-    <div class="sb-item" id="sb-1" onclick="sbGo(1)">
-      <i class="ti ti-layout-grid sb-icon" aria-hidden="true"></i>
-      <span>코디</span>
-    </div>
-    <div class="sb-item" id="sb-2" onclick="sbGo(2)">
-      <i class="ti ti-chart-pie sb-icon" aria-hidden="true"></i>
-      <span>대시보드</span>
-    </div>
-    <div class="sb-item" id="sb-3" onclick="sbGo(3)">
-      <i class="ti ti-wand sb-icon" aria-hidden="true"></i>
-      <span>데일리룩</span>
+    <div>
+      <div style="color:#1A2540;font-size:14px;font-weight:700;line-height:1.25;letter-spacing:-0.02em">AI Closet</div>
+      <div style="color:#9BAAC4;font-size:10px;margin-top:1px;letter-spacing:0.01em">스마트 옷장 관리</div>
     </div>
   </div>
 
-  <!-- 하단 -->
-  <div style="padding:10px 10px 20px; border-top:1px solid rgba(255,255,255,.08)">
-    <div class="sb-item" style="opacity:.32; cursor:default; pointer-events:none">
-      <i class="ti ti-settings sb-icon" aria-hidden="true"></i>
-      <span>설정</span>
-    </div>
-    <div style="padding:10px 8px 0; font-size:9.5px; color:rgba(255,255,255,.18); line-height:1.55; letter-spacing:0.01em">
-      Florence-2 · Qwen2.5-7B<br>Open-Meteo · Supabase
-    </div>
+  <!-- 메뉴 버튼 -->
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="tn-btn active" id="tn-0" onclick="navGo(0)">
+      <i class="ti ti-hanger"></i><span>옷장</span>
+    </button>
+    <button class="tn-btn" id="tn-1" onclick="navGo(1)">
+      <i class="ti ti-layout-grid"></i><span>코디</span>
+    </button>
+    <button class="tn-btn" id="tn-2" onclick="navGo(2)">
+      <i class="ti ti-chart-pie"></i><span>대시보드</span>
+    </button>
+    <button class="tn-btn" id="tn-3" onclick="navGo(3)">
+      <i class="ti ti-wand"></i><span>데일리룩</span>
+    </button>
   </div>
-</div>
+
+  <!-- 우측 배지 -->
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <span style="background:#EEF2FA;color:#4A6FA5;font-size:10.5px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid #D8E2F0">Florence-2 · Qwen2.5</span>
+  </div>
+</nav>
 
 <style>
-.sb-item {
+#aic-topnav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #FFFFFF;
+    border-bottom: 1px solid #D8E2F0;
+    padding: 0 24px;
+    height: 58px;
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 9px 10px;
+    justify-content: space-between;
+    box-shadow: 0 1px 0 rgba(27,58,107,0.06), 0 2px 8px rgba(27,58,107,0.04);
+    gap: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+}
+.tn-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
     border-radius: 8px;
-    cursor: pointer;
-    color: rgba(255,255,255,.52);
+    border: none;
+    background: transparent;
+    color: #5A6A8A;
     font-size: 13px;
-    transition: all .15s;
-    margin-bottom: 2px;
-    user-select: none;
-    position: relative;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+    box-shadow: none !important;
+    min-width: unset !important;
+    height: auto !important;
+    width: auto !important;
 }
-.sb-item:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.88); }
-.sb-item.active { background: rgba(255,255,255,.13); color: #fff; font-weight: 500; }
-.sb-item.active::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 50%;
-    transform: translateY(-50%);
-    width: 3px; height: 65%;
-    background: rgba(255,255,255,.75);
-    border-radius: 0 3px 3px 0;
+.tn-btn i { font-size: 16px; flex-shrink: 0; }
+.tn-btn:hover {
+    background: #EEF2FA;
+    color: #1B3A6B;
 }
-.sb-icon { font-size: 16px; flex-shrink: 0; width: 18px; text-align: center; }
+.tn-btn.active {
+    background: #EEF2FA;
+    color: #2A52A0;
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 0 #2A52A0 !important;
+}
 </style>
 
 <script>
-/* ── 사이드바 ↔ Gradio Tabs 연동 모듈 ── */
+/* ── 상단 네비 ↔ Gradio Tabs 연동 ── */
 (function () {
-    var _tabBtns = null;   // Gradio tab 버튼 캐시
-    var NUM_TABS  = 4;
+    var _tabBtns = null;
+    var NUM_TABS = 4;
 
-    /* Gradio가 렌더링한 [role="tab"] 버튼 목록 반환.
-       캐시가 유효하면 재사용, 아니면 DOM 탐색. */
     function findTabBtns() {
         if (_tabBtns && _tabBtns.length === NUM_TABS) return _tabBtns;
-
         var sel = [
             '#content-tabs [role="tab"]',
             '#content-tabs .tab-nav button',
@@ -757,49 +679,41 @@ SIDEBAR_HTML = """
         ];
         for (var s = 0; s < sel.length; s++) {
             var found = document.querySelectorAll(sel[s]);
-            if (found.length === NUM_TABS) {
-                _tabBtns = found;
-                return _tabBtns;
-            }
+            if (found.length === NUM_TABS) { _tabBtns = found; return _tabBtns; }
         }
         return null;
     }
 
-    /* 사이드바 active 클래스 동기화 */
-    function syncSidebar(idx) {
+    function syncNav(idx) {
         for (var i = 0; i < NUM_TABS; i++) {
-            var el = document.getElementById('sb-' + i);
+            var el = document.getElementById('tn-' + i);
             if (el) el.classList.toggle('active', i === idx);
         }
     }
 
-    /* 사이드바 메뉴 클릭 → 탭 전환 (전역 노출) */
-    window.sbGo = function sbGo(idx, _retry) {
+    window.navGo = function navGo(idx, _retry) {
         _retry = _retry || 0;
-        syncSidebar(idx);               // 시각 피드백은 즉시
-
+        syncNav(idx);
         var tabs = findTabBtns();
         if (tabs) {
-            tabs[idx].click();          // Gradio 탭 전환 트리거
+            tabs[idx].click();
         } else if (_retry < 20) {
-            _tabBtns = null;            // 캐시 무효화 후 재시도
-            setTimeout(function () { sbGo(idx, _retry + 1); }, 150);
+            _tabBtns = null;
+            setTimeout(function () { navGo(idx, _retry + 1); }, 150);
         }
     };
 
-    /* Gradio 탭 버튼이 직접 클릭될 때 사이드바도 동기화 */
     document.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest('[role="tab"]');
         if (!btn) return;
         var tabs = findTabBtns();
         if (!tabs) return;
         var idx = Array.from(tabs).indexOf(btn);
-        if (idx >= 0) syncSidebar(idx);
-    }, true);  /* capture 단계 — Gradio 처리보다 먼저 실행 */
-
+        if (idx >= 0) syncNav(idx);
+    }, true);
 })();
 
-/* 이미지 업로드 텍스트 커스텀 */
+/* ── 이미지 업로드 텍스트 커스텀 ── */
 function patchUploadText() {
     var box = document.querySelector('.image-box');
     if (!box) return false;
@@ -825,7 +739,7 @@ if (!patchUploadText()) {
     [300, 700, 1500].forEach(function(t) { setTimeout(patchUploadText, t); });
 }
 
-/* 결과 텍스트박스 자동 높이 조정 (field-sizing 미지원 브라우저 대응) */
+/* ── 결과 텍스트박스 자동 높이 조정 ── */
 function autoResizeResultBoxes() {
     document.querySelectorAll('.result-box textarea').forEach(function(ta) {
         ta.style.height = 'auto';
@@ -839,168 +753,163 @@ setInterval(autoResizeResultBoxes, 800);
 _gr_major = int(gr.__version__.split(".")[0])
 
 # ── Blocks 레이아웃 ───────────────────────────────────────────────────────────
-with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Base()) as demo:
+with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as demo:
 
-    with gr.Row(elem_id="main-row"):
+    gr.HTML(TOP_NAV_HTML)
 
-        # ── 왼쪽: 사이드바 ────────────────────────────────────────────────────
-        with gr.Column(scale=0, min_width=210, elem_id="sidebar-col"):
-            gr.HTML(SIDEBAR_HTML)
+    with gr.Tabs(elem_id="content-tabs"):
 
-        # ── 오른쪽: 컨텐츠 (gr.Tabs로 페이지 전환) ───────────────────────────
-        with gr.Column(scale=1, elem_id="content-col"):
-            with gr.Tabs(elem_id="content-tabs"):
-
-                # ── 탭 0: 옷장 ────────────────────────────────────────────
-                with gr.Tab("옷장"):
-                    gr.HTML("""
-                        <div class="topbar" style="position:sticky;top:0;z-index:10">
-                            <span class="topbar-title">내 옷장</span>
-                            <div class="topbar-meta">
-                                <span class="topbar-badge">Florence-2 Vision</span>
-                            </div>
-                        </div>
-                    """)
-                    with gr.Column(elem_classes=["tab-content"]):
-                        gr.HTML('<div class="section-header">의류 추가</div>')
-                        with gr.Row():
-                            image_input = gr.Image(
-                                type="filepath",
-                                label="의류 사진 업로드",
-                                elem_classes=["image-box"],
-                            )
-                            with gr.Column():
-                                description_input = gr.Textbox(
-                                    label="직접 설명 (선택 — AI 분석 실패 시)",
-                                    placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
-                                    lines=2,
-                                )
-                                size_input = gr.Textbox(
-                                    label="사이즈", placeholder="S, M, L, 250 등"
-                                )
-                                price_input = gr.Textbox(
-                                    label="구매 가격", placeholder="50000"
-                                )
-                                date_input = gr.Textbox(
-                                    label="구매 시기", placeholder="2024-03"
-                                )
-                                upload_btn = gr.Button(
-                                    "AI 분류 및 추가", elem_classes=["btn-primary"]
-                                )
-
-                        upload_result = gr.Textbox(
-                            label="분류 결과", interactive=False,
-                            elem_classes=["result-box"],
-                            lines=3, max_lines=20,
+        # ── 탭 0: 옷장 ────────────────────────────────────────────────────
+        with gr.Tab("옷장"):
+            gr.HTML("""
+                <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                    <span class="topbar-title">내 옷장</span>
+                    <div class="topbar-meta">
+                        <span class="topbar-badge">Florence-2 Vision</span>
+                    </div>
+                </div>
+            """)
+            with gr.Column(elem_classes=["tab-content"]):
+                gr.HTML('<div class="section-header">의류 추가</div>')
+                with gr.Row():
+                    image_input = gr.Image(
+                        type="filepath",
+                        label="의류 사진 업로드",
+                        elem_classes=["image-box"],
+                    )
+                    with gr.Column():
+                        description_input = gr.Textbox(
+                            label="직접 설명 (선택 — AI 분석 실패 시)",
+                            placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
+                            lines=2,
                         )
-                        gr.HTML('<div class="section-header">옷장 목록</div>')
-                        wardrobe_df = gr.Dataframe(
-                            headers=["이름", "카테고리", "색상", "사진", "계절", "사이즈", "등록일"],
-                            label=None,
-                            elem_classes=["table-box"],
+                        size_input = gr.Textbox(
+                            label="사이즈", placeholder="S, M, L, 250 등"
                         )
-                        refresh_wardrobe_btn = gr.Button(
-                            "목록 새로고침", elem_classes=["btn-secondary"]
+                        price_input = gr.Textbox(
+                            label="구매 가격", placeholder="50000"
+                        )
+                        date_input = gr.Textbox(
+                            label="구매 시기", placeholder="2024-03"
+                        )
+                        upload_btn = gr.Button(
+                            "AI 분류 및 추가", elem_classes=["btn-primary"]
                         )
 
-                # ── 탭 1: 코디 ────────────────────────────────────────────
-                with gr.Tab("코디"):
-                    gr.HTML("""
-                        <div class="topbar" style="position:sticky;top:0;z-index:10">
-                            <span class="topbar-title">코디 목록</span>
-                            <div class="topbar-meta">
-                                <span class="topbar-pill">✨ AI 생성 지원</span>
-                            </div>
-                        </div>
-                    """)
-                    with gr.Column(elem_classes=["tab-content"]):
-                        gr.HTML('<div class="section-header">AI 코디 생성</div>')
-                        with gr.Row():
-                            situation_input = gr.Dropdown(
-                                choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
-                                label="상황", value="캐주얼",
-                            )
-                            season_input = gr.Dropdown(
-                                choices=["봄", "여름", "가을", "겨울", "사계절"],
-                                label="계절", value="봄",
-                            )
-                            gen_btn = gr.Button(
-                                "✨ AI 코디 생성", elem_classes=["btn-primary"]
-                            )
+                upload_result = gr.Textbox(
+                    label="분류 결과", interactive=False,
+                    elem_classes=["result-box"],
+                    lines=3, max_lines=20,
+                )
+                gr.HTML('<div class="section-header">옷장 목록</div>')
+                wardrobe_df = gr.Dataframe(
+                    headers=["이름", "카테고리", "색상", "사진", "계절", "사이즈", "등록일"],
+                    label=None,
+                    elem_classes=["table-box"],
+                )
+                refresh_wardrobe_btn = gr.Button(
+                    "목록 새로고침", elem_classes=["btn-secondary"]
+                )
 
-                        outfit_result = gr.Textbox(
-                            label="생성된 코디", interactive=False,
-                            elem_classes=["result-box"],
-                            lines=3, max_lines=20,
-                        )
-                        gr.HTML('<div class="section-header">저장된 코디 목록</div>')
-                        outfit_df = gr.Dataframe(
-                            headers=["코디명", "상황", "계절", "태그", "착용 의류", "AI생성", "생성일"],
-                            label=None,
-                            elem_classes=["table-box"],
-                        )
+        # ── 탭 1: 코디 ────────────────────────────────────────────────────
+        with gr.Tab("코디"):
+            gr.HTML("""
+                <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                    <span class="topbar-title">코디 목록</span>
+                    <div class="topbar-meta">
+                        <span class="topbar-pill">✨ AI 생성 지원</span>
+                    </div>
+                </div>
+            """)
+            with gr.Column(elem_classes=["tab-content"]):
+                gr.HTML('<div class="section-header">AI 코디 생성</div>')
+                with gr.Row():
+                    situation_input = gr.Dropdown(
+                        choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
+                        label="상황", value="캐주얼",
+                    )
+                    season_input = gr.Dropdown(
+                        choices=["봄", "여름", "가을", "겨울", "사계절"],
+                        label="계절", value="봄",
+                    )
+                    gen_btn = gr.Button(
+                        "✨ AI 코디 생성", elem_classes=["btn-primary"]
+                    )
 
-                # ── 탭 2: 대시보드 ────────────────────────────────────────
-                with gr.Tab("대시보드"):
-                    gr.HTML("""
-                        <div class="topbar" style="position:sticky;top:0;z-index:10">
-                            <span class="topbar-title">옷장 대시보드</span>
-                            <div class="topbar-meta">
-                                <span class="topbar-badge">실시간 통계</span>
-                            </div>
-                        </div>
-                    """)
-                    with gr.Column(elem_classes=["tab-content"]):
-                        with gr.Row():
-                            total_items_num = gr.Number(
-                                label="총 의류 수", interactive=False,
-                                elem_classes=["stat-box"],
-                            )
-                            total_outfits_num = gr.Number(
-                                label="저장된 코디", interactive=False,
-                                elem_classes=["stat-box"],
-                            )
-                        gr.HTML('<div class="section-header">카테고리별 통계</div>')
-                        stats_html = gr.HTML(value="<div class='sc-wrap'></div>")
-                        dash_refresh_btn = gr.Button(
-                            "통계 새로고침", elem_classes=["btn-secondary"]
-                        )
+                outfit_result = gr.Textbox(
+                    label="생성된 코디", interactive=False,
+                    elem_classes=["result-box"],
+                    lines=3, max_lines=20,
+                )
+                gr.HTML('<div class="section-header">저장된 코디 목록</div>')
+                outfit_df = gr.Dataframe(
+                    headers=["코디명", "상황", "계절", "태그", "착용 의류", "AI생성", "생성일"],
+                    label=None,
+                    elem_classes=["table-box"],
+                )
 
-                # ── 탭 3: 데일리룩 ────────────────────────────────────────
-                with gr.Tab("데일리룩"):
-                    gr.HTML("""
-                        <div class="topbar" style="position:sticky;top:0;z-index:10">
-                            <span class="topbar-title">AI 데일리룩 추천</span>
-                            <div class="topbar-meta">
-                                <span class="topbar-badge">Open-Meteo 날씨</span>
-                            </div>
-                        </div>
-                    """)
-                    with gr.Column(elem_classes=["tab-content"]):
-                        weather_html = gr.HTML(value="<div class='weather-card'></div>")
-                        chatbot = gr.Chatbot(
-                            label=None,
-                            show_label=False,
-                            height=340,
-                            type="messages",
-                            elem_classes=["chatbot-box"],
-                        )
-                        with gr.Row(elem_classes=["chat-input-row"]):
-                            chat_input = gr.Textbox(
-                                label="", show_label=False,
-                                placeholder="날씨 보고 내일 코디 추천해줘...",
-                                scale=4,
-                                lines=1,
-                                max_lines=1,
-                                elem_id="chat-input",
-                            )
-                            chat_btn = gr.Button(
-                                "↑", scale=0, min_width=46,
-                                elem_id="chat-send-btn",
-                            )
-                        clear_btn = gr.Button(
-                            "대화 초기화", elem_classes=["btn-secondary"]
-                        )
+        # ── 탭 2: 대시보드 ────────────────────────────────────────────────
+        with gr.Tab("대시보드"):
+            gr.HTML("""
+                <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                    <span class="topbar-title">옷장 대시보드</span>
+                    <div class="topbar-meta">
+                        <span class="topbar-badge">실시간 통계</span>
+                    </div>
+                </div>
+            """)
+            with gr.Column(elem_classes=["tab-content"]):
+                with gr.Row():
+                    total_items_num = gr.Number(
+                        label="총 의류 수", interactive=False,
+                        elem_classes=["stat-box"],
+                    )
+                    total_outfits_num = gr.Number(
+                        label="저장된 코디", interactive=False,
+                        elem_classes=["stat-box"],
+                    )
+                gr.HTML('<div class="section-header">카테고리별 통계</div>')
+                stats_html = gr.HTML(value="<div class='sc-wrap'></div>")
+                dash_refresh_btn = gr.Button(
+                    "통계 새로고침", elem_classes=["btn-secondary"]
+                )
+
+        # ── 탭 3: 데일리룩 ────────────────────────────────────────────────
+        with gr.Tab("데일리룩"):
+            gr.HTML("""
+                <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                    <span class="topbar-title">AI 데일리룩 추천</span>
+                    <div class="topbar-meta">
+                        <span class="topbar-badge">Open-Meteo 날씨</span>
+                    </div>
+                </div>
+            """)
+            with gr.Column(elem_classes=["tab-content"]):
+                weather_html = gr.HTML(value="<div class='weather-card'></div>")
+                chatbot = gr.Chatbot(
+                    label=None,
+                    show_label=False,
+                    height=340,
+                    type="messages",
+                    elem_classes=["chatbot-box"],
+                )
+                with gr.Row(elem_classes=["chat-input-row"]):
+                    chat_input = gr.Textbox(
+                        label="", show_label=False,
+                        placeholder="날씨 보고 내일 코디 추천해줘...",
+                        scale=10,
+                        lines=1,
+                        max_lines=1,
+                        elem_id="chat-input",
+                    )
+                    chat_btn = gr.Button(
+                        "↑",
+                        scale=1,
+                        elem_id="chat-send-btn",
+                    )
+                clear_btn = gr.Button(
+                    "대화 초기화", elem_classes=["btn-secondary"]
+                )
 
     # ── 이벤트 연결 ──────────────────────────────────────────────────────────
 
