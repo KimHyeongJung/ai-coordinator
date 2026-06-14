@@ -1265,18 +1265,43 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     )
 
     # 옷장 — 삭제
+    _EMPTY_IMAGE_HTML = (
+        '<div style="width:100%;height:160px;background:#EEF2FA;border-radius:10px;'
+        'display:flex;align-items:center;justify-content:center;'
+        'color:#9BAAC4;font-size:12px">사진 없음</div>'
+    )
+
     def _delete_wardrobe(sel_idx, items):
         if sel_idx < 0 or not items or sel_idx >= len(items):
-            return "삭제할 항목을 먼저 선택해주세요.", [], []
+            return ("삭제할 항목을 먼저 선택해주세요.",
+                    gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(open=False))
         item = items[sel_idx]
         storage.delete_item(item["id"])
         new_items = storage.load_wardrobe().get("items", [])
-        return f"✅ '{item.get('name', '')}' 삭제 완료", dashboard.get_wardrobe_table(new_items), new_items
+        return (
+            f"✅ '{item.get('name', '')}' 삭제 완료",
+            dashboard.get_wardrobe_table(new_items),
+            new_items,
+            -1,
+            _EMPTY_IMAGE_HTML,
+            "", "기타", "", "", [], "", "", "", "",
+            gr.update(open=False),
+        )
 
     delete_w_btn.click(
         fn=_delete_wardrobe,
         inputs=[selected_wardrobe_idx, wardrobe_items_state],
-        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state],
+        outputs=[
+            edit_w_result, wardrobe_df, wardrobe_items_state,
+            selected_wardrobe_idx, item_image_display,
+            edit_w_name, edit_w_category, edit_w_color, edit_w_style,
+            edit_w_season, edit_w_price, edit_w_purchase_date,
+            edit_w_wash, edit_w_size,
+            wardrobe_edit_acc,
+        ],
     )
 
     # 코디 — 생성
@@ -1395,18 +1420,39 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     )
 
     # 코디 — 삭제
+    _EMPTY_GALLERY_HTML = (
+        '<div style="color:#9BAAC4;font-size:12px;padding:8px 0">'
+        '코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
+    )
+
     def _delete_outfit(sel_idx, items):
         if sel_idx < 0 or not items or sel_idx >= len(items):
-            return "삭제할 항목을 먼저 선택해주세요.", [], []
+            return ("삭제할 항목을 먼저 선택해주세요.",
+                    gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(open=False))
         item = items[sel_idx]
         storage.delete_outfit(item["id"])
         new_items = storage.load_outfits().get("outfits", [])
-        return f"✅ '{item.get('name', '')}' 삭제 완료", dashboard.get_outfit_table(new_items), new_items
+        return (
+            f"✅ '{item.get('name', '')}' 삭제 완료",
+            dashboard.get_outfit_table(new_items),
+            new_items,
+            -1,
+            _EMPTY_GALLERY_HTML,
+            "", [], [], "",
+            gr.update(open=False),
+        )
 
     delete_o_btn.click(
         fn=_delete_outfit,
         inputs=[selected_outfit_idx, outfit_items_state],
-        outputs=[edit_o_result, outfit_df, outfit_items_state],
+        outputs=[
+            edit_o_result, outfit_df, outfit_items_state,
+            selected_outfit_idx, outfit_items_gallery,
+            edit_o_name, edit_o_situation, edit_o_season, edit_o_tags,
+            outfit_edit_acc,
+        ],
     )
 
     # 대시보드
