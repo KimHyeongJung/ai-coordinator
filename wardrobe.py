@@ -54,6 +54,7 @@ CLOTHING_SYSTEM_PROMPT = """
 - season: 적합한 계절 배열 (봄/여름/가을/겨울 중 복수 가능)
 - material: 캡션에서 추정 불가 시 "추정 불가" 입력
 - wash_instruction: 소재 기반 세탁 방법 한 줄로 작성
+언어 규칙: 모든 텍스트 필드는 반드시 한국어 또는 영어로만 작성할 것. 한자(漢字·中文) 사용 절대 금지.
 """
 
 _clothing_chain = None

@@ -606,7 +606,7 @@ button.secondary:hover {
 #chat-send-btn,
 #chat-send-btn > .block,
 #chat-send-btn > div {
-    background: transparent !important;
+    background: var(--navy-light) !important;
     border: none !important;
     padding: 0 !important;
     box-shadow: none !important;
