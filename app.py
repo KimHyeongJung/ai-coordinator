@@ -767,8 +767,8 @@ button.secondary:hover {
 [data-testid="dataframe"] thead th {
     font-weight: 700 !important;
 }
-.table-box table tbody tr td { font-size: 12.5px !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif !important; color: var(--text) !important; padding: 9px 14px !important; background: #EEF2FA !important; border-bottom: 1px solid var(--border-light) !important; border-right: none !important; border-left: none !important; border-top: none !important; max-width: 160px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
-.table-box table { table-layout: fixed !important; }
+.table-box table tbody tr td { font-size: 12.5px !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif !important; color: var(--text) !important; padding: 9px 14px !important; background: #EEF2FA !important; border-bottom: 1px solid var(--border-light) !important; border-right: none !important; border-left: none !important; border-top: none !important; word-break: break-word !important; white-space: normal !important; vertical-align: top !important; }
+.table-box table { table-layout: auto !important; }
 .table-box table tbody tr:last-child td { border-bottom: none !important; }
 .table-box table tbody tr:hover td { background: #D8E2F0 !important; transition: background 0.12s !important; }
 
