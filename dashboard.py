@@ -34,23 +34,23 @@ def get_stats() -> dict:
 
 def get_wardrobe_table(items=None) -> list[list]:
     """옷장 아이템을 gr.Dataframe 출력용 2D 리스트로 변환.
-    컬럼: 이름 / 카테고리 / 색상 / 사진 / 계절 / 사이즈 / 등록일
+    컬럼: 이름 / 카테고리 / 색상 / 스타일 / 계절 / 가격 / 구매시기 / 세탁방법
     """
     if items is None:
         items = storage.load_wardrobe().get("items", [])
     rows = []
     for item in items:
         season = ", ".join(item.get("season") or [])
-        date = (item.get("created_at") or "")[:10]
         rows.append(
             [
                 item.get("name", ""),
                 item.get("category", ""),
                 item.get("color", ""),
-                "없음",  # image_path: 데모에서는 파일 경로 미저장
+                item.get("style", ""),
                 season,
-                item.get("size") or "",
-                date,
+                item.get("price") or "",
+                item.get("purchase_date") or "",
+                item.get("wash_instruction", ""),
             ]
         )
     return rows

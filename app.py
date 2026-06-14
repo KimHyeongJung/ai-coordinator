@@ -504,7 +504,7 @@ button.secondary:hover {
     -webkit-text-fill-color: #1A2540 !important;
 }
 .stat-box label > span:first-child {
-    font-size: 18px !important; color: var(--white) !important; font-weight: 600 !important;
+    font-size: 14px !important; color: var(--white) !important; font-weight: 600 !important;
     text-align: center !important; display: block !important; text-transform: uppercase !important;
     letter-spacing: 0.07em !important; margin-bottom: 6px !important;
 }
@@ -922,7 +922,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 )
                 gr.HTML('<div class="section-header">저장된 의류 목록</div>')
                 wardrobe_df = gr.Dataframe(
-                    headers=["이름", "카테고리", "색상", "사진", "계절", "사이즈", "등록일"],
+                    headers=["이름", "카테고리", "색상", "스타일", "계절", "가격", "구매시기", "세탁방법"],
                     label=None,
                     elem_classes=["table-box"],
                 )
