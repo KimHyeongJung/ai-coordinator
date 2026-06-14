@@ -32,6 +32,14 @@ def get_stats() -> dict:
     }
 
 
+def _dash(value) -> str:
+    """값이 없으면 '-' 반환."""
+    if value is None:
+        return "-"
+    s = str(value).strip()
+    return s if s else "-"
+
+
 def get_wardrobe_table(items=None) -> list[list]:
     """옷장 아이템을 gr.Dataframe 출력용 2D 리스트로 변환.
     컬럼: 이름 / 카테고리 / 색상 / 스타일 / 계절 / 가격 / 구매시기 / 세탁방법
@@ -40,17 +48,18 @@ def get_wardrobe_table(items=None) -> list[list]:
         items = storage.load_wardrobe().get("items", [])
     rows = []
     for item in items:
-        season = ", ".join(item.get("season") or [])
+        season_list = item.get("season") or []
+        season = ", ".join(season_list) if season_list else "-"
         rows.append(
             [
-                item.get("name", ""),
-                item.get("category", ""),
-                item.get("color", ""),
-                item.get("style", ""),
+                _dash(item.get("name")),
+                _dash(item.get("category")),
+                _dash(item.get("color")),
+                _dash(item.get("style")),
                 season,
-                item.get("price") or "",
-                item.get("purchase_date") or "",
-                item.get("wash_instruction", ""),
+                _dash(item.get("price")),
+                _dash(item.get("purchase_date")),
+                _dash(item.get("wash_instruction")),
             ]
         )
     return rows
@@ -70,16 +79,16 @@ def get_outfit_table(outfits=None, wardrobe_items=None) -> list[list]:
     }
     rows = []
     for outfit in outfits:
-        tags = ", ".join(outfit.get("tags") or [])
-        date = (outfit.get("created_at") or "")[:10]
-        item_names = ", ".join(
-            wardrobe_map.get(iid, iid) for iid in (outfit.get("item_ids") or [])
-        )
+        tags_list = outfit.get("tags") or []
+        tags = ", ".join(tags_list) if tags_list else "-"
+        date = (outfit.get("created_at") or "")[:10] or "-"
+        item_ids = outfit.get("item_ids") or []
+        item_names = ", ".join(wardrobe_map.get(iid, iid) for iid in item_ids) if item_ids else "-"
         rows.append(
             [
-                outfit.get("name", ""),
-                outfit.get("situation", ""),
-                outfit.get("season", ""),
+                _dash(outfit.get("name")),
+                _dash(outfit.get("situation")),
+                _dash(outfit.get("season")),
                 tags,
                 item_names,
                 "✓" if outfit.get("ai_generated") else "✗",

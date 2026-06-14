@@ -317,38 +317,28 @@ button.secondary:hover {
 }
 
 /* ── 계절 선택 버튼 색상 ── */
-/* 봄 */
-#edit-w-season label:nth-child(1) {
-    background: #FFE4EF !important; color: #BE185D !important;
-    border-color: #FBCFE8 !important;
+/* 미선택 공통: 흰색 */
+#edit-w-season label {
+    background: #FFFFFF !important;
+    color: #9BAAC4 !important;
+    border-color: #E2E8F0 !important;
 }
+/* 봄 - 선택 */
 #edit-w-season label:nth-child(1):has(input:checked) {
     background: #EC4899 !important; color: #fff !important;
     border-color: #DB2777 !important;
 }
-/* 여름 */
-#edit-w-season label:nth-child(2) {
-    background: #E0F2FE !important; color: #0369A1 !important;
-    border-color: #BAE6FD !important;
-}
+/* 여름 - 선택 */
 #edit-w-season label:nth-child(2):has(input:checked) {
     background: #0EA5E9 !important; color: #fff !important;
     border-color: #0284C7 !important;
 }
-/* 가을 */
-#edit-w-season label:nth-child(3) {
-    background: #FEF3C7 !important; color: #92400E !important;
-    border-color: #FDE68A !important;
-}
+/* 가을 - 선택 */
 #edit-w-season label:nth-child(3):has(input:checked) {
     background: #F59E0B !important; color: #fff !important;
     border-color: #D97706 !important;
 }
-/* 겨울 */
-#edit-w-season label:nth-child(4) {
-    background: #EEF2FF !important; color: #3730A3 !important;
-    border-color: #C7D2FE !important;
-}
+/* 겨울 - 선택 */
 #edit-w-season label:nth-child(4):has(input:checked) {
     background: #6366F1 !important; color: #fff !important;
     border-color: #4F46E5 !important;

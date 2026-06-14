@@ -106,31 +106,42 @@ def generate_outfit(situation: str, season: str) -> dict:
         }
 
 
+_VALID_SITUATIONS = {"회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"}
+_VALID_SEASONS = {"봄", "여름", "가을", "겨울", "사계절"}
+
+
 def generate_outfit_ui(situation: str, season: str) -> tuple[str, list]:
     """
     Gradio 콜백용 래퍼.
     코디를 생성하고 DB에 저장한 뒤 (결과 메시지, 코디 테이블) 반환.
+    situation / season 은 UI 드롭다운에서 선택한 카테고리 값을 항상 사용한다.
     """
     result = generate_outfit(situation, season)
 
+    # UI 드롭다운 값이 유효한 카테고리면 그대로, 아니면 기본값
+    saved_situation = situation if situation in _VALID_SITUATIONS else "기타"
+    saved_season = season if season in _VALID_SEASONS else "사계절"
+
     # 실제 아이템이 선택된 경우만 DB에 저장
     if result.get("item_ids"):
+        outfit_name = result.get("name") or f"{saved_situation} 코디"
+        tags = result.get("tags") or []
         storage.add_outfit(
             {
-                "name": result.get("name", "코디"),
-                "item_ids": result.get("item_ids", []),
-                "tags": result.get("tags", []),
-                "season": result.get("season", season),
-                "situation": result.get("situation", situation),
+                "name": outfit_name,
+                "item_ids": result["item_ids"],
+                "tags": tags,
+                "situation": saved_situation,
+                "season": saved_season,
                 "ai_generated": True,
             }
         )
-        tags_str = ", ".join(result.get("tags", []))
+        tags_str = ", ".join(tags) if tags else "-"
         msg = (
             f"✅ 코디 생성 완료!\n"
-            f"코디명: {result.get('name', '')}\n"
-            f"태그: {tags_str}\n\n"
-            f"{result.get('reason', '')}"
+            f"코디명: {outfit_name}\n"
+            f"상황: {saved_situation} | 계절: {saved_season}\n"
+            f"태그: {tags_str}"
         )
     else:
         msg = f"ℹ️ {result.get('reason', '코디를 생성할 수 없습니다.')}"
