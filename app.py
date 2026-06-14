@@ -629,16 +629,30 @@ button.secondary:hover {
     letter-spacing: 0.03em !important;
     white-space: nowrap !important;
 }
-/* 헤더 셀 내부 래퍼 */
+/* 헤더 셀 내부 래퍼 — 흰 띠/테두리 제거 + Bold */
+.table-box table thead th *,
 .table-box table thead th > *,
 .table-box table thead th span,
 .table-box table thead th div,
+.table-box table thead th button,
+[data-testid="dataframe"] thead th *,
 [data-testid="dataframe"] thead th > *,
 [data-testid="dataframe"] thead th span,
-[data-testid="dataframe"] thead th div {
+[data-testid="dataframe"] thead th div,
+[data-testid="dataframe"] thead th button {
     background: #1B3A6B !important;
     background-color: #1B3A6B !important;
     color: #FFFFFF !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+}
+/* 헤더 셀 자체도 Bold */
+.table-box table thead th,
+[data-testid="dataframe"] thead th {
+    font-weight: 700 !important;
 }
 .table-box table tbody tr td { font-size: 12.5px !important; color: var(--text) !important; padding: 9px 14px !important; background: #EEF2FA !important; border-bottom: 1px solid var(--border-light) !important; border-right: none !important; border-left: none !important; border-top: none !important; }
 .table-box table tbody tr:last-child td { border-bottom: none !important; }
