@@ -307,7 +307,9 @@ button.secondary:hover {
 /* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
 .block label > span:first-child,
 .block .label-wrap > span,
-.block .label-wrap label > span:first-child {
+.block .label-wrap label > span:first-child,
+.block [data-testid="block-label"],
+[data-testid="block-label"] {
     background: #1B3A6B !important;
     color: #FFFFFF !important;
     font-size: 11px !important;
@@ -385,8 +387,7 @@ button.secondary:hover {
     height: 100% !important;
     align-self: stretch !important;
     background: transparent !important;
-    border: 1.5px dashed #BFD0E8 !important;
-    border-color: var(--navy-mid) !important;
+    border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
 }
@@ -395,7 +396,6 @@ button.secondary:hover {
     height: 100% !important;
     min-height: 280px !important;
     border: 1.5px dashed #BFD0E8 !important;
-    border-color: var(--navy-mid) !important;
     border-radius: var(--radius-lg) !important;
     background: #FAFCFF !important;
     display: flex !important;
