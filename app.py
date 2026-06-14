@@ -344,6 +344,54 @@ button.secondary:hover {
     border-color: #4F46E5 !important;
 }
 
+/* ── 코디 편집: 계절 색상 (의류와 동일) ── */
+#edit-o-season label {
+    background: #FFFFFF !important; color: #9BAAC4 !important;
+    border-color: #E2E8F0 !important;
+}
+#edit-o-season label:nth-child(1):has(input:checked) {
+    background: #EC4899 !important; color: #fff !important; border-color: #DB2777 !important;
+}
+#edit-o-season label:nth-child(2):has(input:checked) {
+    background: #0EA5E9 !important; color: #fff !important; border-color: #0284C7 !important;
+}
+#edit-o-season label:nth-child(3):has(input:checked) {
+    background: #F59E0B !important; color: #fff !important; border-color: #D97706 !important;
+}
+#edit-o-season label:nth-child(4):has(input:checked) {
+    background: #6366F1 !important; color: #fff !important; border-color: #4F46E5 !important;
+}
+#edit-o-season label:nth-child(5):has(input:checked) {
+    background: #14B8A6 !important; color: #fff !important; border-color: #0D9488 !important;
+}
+
+/* ── 코디 편집: 상황 색상 ── */
+#edit-o-situation label {
+    background: #FFFFFF !important; color: #9BAAC4 !important;
+    border-color: #E2E8F0 !important;
+}
+#edit-o-situation label:nth-child(1):has(input:checked) {
+    background: #2563EB !important; color: #fff !important; border-color: #1D4ED8 !important;
+}
+#edit-o-situation label:nth-child(2):has(input:checked) {
+    background: #EC4899 !important; color: #fff !important; border-color: #DB2777 !important;
+}
+#edit-o-situation label:nth-child(3):has(input:checked) {
+    background: #16A34A !important; color: #fff !important; border-color: #15803D !important;
+}
+#edit-o-situation label:nth-child(4):has(input:checked) {
+    background: #7C3AED !important; color: #fff !important; border-color: #6D28D9 !important;
+}
+#edit-o-situation label:nth-child(5):has(input:checked) {
+    background: #EA580C !important; color: #fff !important; border-color: #C2410C !important;
+}
+#edit-o-situation label:nth-child(6):has(input:checked) {
+    background: #0D9488 !important; color: #fff !important; border-color: #0F766E !important;
+}
+#edit-o-situation label:nth-child(7):has(input:checked) {
+    background: #6B7280 !important; color: #fff !important; border-color: #4B5563 !important;
+}
+
 /* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
 .block label > span:first-child,
 .block .label-wrap > span,
@@ -1033,18 +1081,18 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     outfit_items_gallery = gr.HTML(
                         value='<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
                     )
-                    with gr.Row():
-                        edit_o_name = gr.Textbox(label="코디명", interactive=True)
-                        edit_o_situation = gr.Dropdown(
-                            choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
-                            label="상황", interactive=True,
-                        )
-                    with gr.Row():
-                        edit_o_season = gr.Dropdown(
-                            choices=["봄", "여름", "가을", "겨울", "사계절"],
-                            label="계절", interactive=True,
-                        )
-                        edit_o_tags = gr.Textbox(label="태그 (쉼표로 구분)", interactive=True)
+                    edit_o_name = gr.Textbox(label="코디명", interactive=True)
+                    edit_o_situation = gr.CheckboxGroup(
+                        choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
+                        label="상황", interactive=True,
+                        elem_id="edit-o-situation",
+                    )
+                    edit_o_season = gr.CheckboxGroup(
+                        choices=["봄", "여름", "가을", "겨울", "사계절"],
+                        label="계절", interactive=True,
+                        elem_id="edit-o-season",
+                    )
+                    edit_o_tags = gr.Textbox(label="태그 (쉼표로 구분)", interactive=True)
                     with gr.Row():
                         save_edit_o_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
                         delete_o_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
@@ -1282,17 +1330,26 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         row = evt.index[0]
         empty_gallery = '<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
         if not items or row < 0 or row >= len(items):
-            return -1, empty_gallery, "", "캐주얼", "봄", "", gr.update(open=True)
+            return -1, empty_gallery, "", [], [], "", gr.update(open=True)
         item = items[row]
         tags_str = ", ".join(item.get("tags") or [])
         wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
         gallery_html = _make_outfit_items_html(item.get("item_ids") or [], wardrobe_map)
+
+        situation = item.get("situation") or []
+        if isinstance(situation, str):
+            situation = [s.strip() for s in situation.split(",") if s.strip()]
+
+        season = item.get("season") or []
+        if isinstance(season, str):
+            season = [s.strip() for s in season.split(",") if s.strip()]
+
         return (
             row,
             gallery_html,
             item.get("name", ""),
-            item.get("situation", "캐주얼"),
-            item.get("season", "봄"),
+            situation,
+            season,
             tags_str,
             gr.update(open=True),
         )
@@ -1309,7 +1366,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             return "수정할 항목을 먼저 선택해주세요.", [], [], ""
         item = items[sel_idx]
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
-        storage.update_outfit(item["id"], {"name": name, "situation": situation, "season": season, "tags": tags})
+        storage.update_outfit(item["id"], {
+            "name": name,
+            "situation": situation if isinstance(situation, list) else [situation] if situation else [],
+            "season": season if isinstance(season, list) else [season] if season else [],
+            "tags": tags,
+        })
         new_items = storage.load_outfits().get("outfits", [])
         # 갤러리 재생성 (item_ids 불변, wardrobe 업데이트 반영)
         wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}

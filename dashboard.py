@@ -77,6 +77,14 @@ def get_outfit_table(outfits=None, wardrobe_items=None) -> list[list]:
         item["id"]: item.get("name", item.get("id", ""))
         for item in wardrobe_items
     }
+    def _join_field(val) -> str:
+        if val is None:
+            return "-"
+        if isinstance(val, list):
+            return ", ".join(val) if val else "-"
+        s = str(val).strip()
+        return s if s else "-"
+
     rows = []
     for outfit in outfits:
         tags_list = outfit.get("tags") or []
@@ -87,8 +95,8 @@ def get_outfit_table(outfits=None, wardrobe_items=None) -> list[list]:
         rows.append(
             [
                 _dash(outfit.get("name")),
-                _dash(outfit.get("situation")),
-                _dash(outfit.get("season")),
+                _join_field(outfit.get("situation")),
+                _join_field(outfit.get("season")),
                 tags,
                 item_names,
                 "✓" if outfit.get("ai_generated") else "✗",
