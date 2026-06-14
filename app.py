@@ -69,15 +69,14 @@ html, body { background: var(--surface) !important; }
 }
 footer { display: none !important; }
 
-/* ── Main row: 전체 화면 수평 배치 ── */
+/* ── Main row: 수평 배치, 높이는 콘텐츠에 맡김 ── */
 #main-row {
     gap: 0 !important;
-    min-height: 100vh !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
     flex-wrap: nowrap !important;
 }
 
-/* ── Sidebar col: 네이비, 패딩 제거 ── */
+/* ── Sidebar col: sticky로 화면에 고정 ── */
 #sidebar-col,
 #sidebar-col > .block,
 #sidebar-col .block {
@@ -88,7 +87,13 @@ footer { display: none !important; }
     box-shadow: none !important;
     gap: 0 !important;
     border-radius: 0 !important;
-    min-height: 100vh !important;
+}
+/* 사이드바 HTML 자체를 sticky로 고정 */
+#aic-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    overflow: hidden !important;
 }
 
 /* ── Content col ── */
@@ -100,7 +105,6 @@ footer { display: none !important; }
     border: none !important;
     background: var(--surface) !important;
     border-radius: 0 !important;
-    min-height: 100vh !important;
 }
 
 /* ── 상단 탭 네비 완전히 숨기기 ── */
