@@ -514,12 +514,10 @@ SIDEBAR_HTML = """
     <div class="sb-item active" id="sb-0" onclick="sbGo(0)">
       <i class="ti ti-hanger sb-icon" aria-hidden="true"></i>
       <span>옷장</span>
-      <span class="sb-badge">24</span>
     </div>
     <div class="sb-item" id="sb-1" onclick="sbGo(1)">
       <i class="ti ti-layout-grid sb-icon" aria-hidden="true"></i>
       <span>코디</span>
-      <span class="sb-badge">12</span>
     </div>
     <div class="sb-item" id="sb-2" onclick="sbGo(2)">
       <i class="ti ti-chart-pie sb-icon" aria-hidden="true"></i>
@@ -680,6 +678,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Base()) as dem
                                     label="직접 설명 (선택 — AI 분석 실패 시)",
                                     placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
                                     lines=2,
+                                    color="#EEF2FA"
                                 )
                                 size_input = gr.Textbox(
                                     label="사이즈", placeholder="S, M, L, 250 등"
