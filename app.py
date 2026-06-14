@@ -304,7 +304,20 @@ button.secondary:hover {
     color: var(--navy) !important;
 }
 
-/* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
+/* ── label 외부 래퍼 초기화 (Soft 테마 파란 배지 제거) ── */
+.block label,
+.block > label,
+.block .label-wrap label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 4px 0 !important;
+    display: block !important;
+    width: fit-content !important;
+}
+
+/* ── 폼 라벨 배지 (span/data-testid 타깃) ── */
 .block label > span:first-child,
 .block .label-wrap > span,
 .block .label-wrap label > span:first-child,
@@ -317,8 +330,10 @@ button.secondary:hover {
     padding: 3px 9px !important;
     border-radius: 5px !important;
     display: inline-block !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 0 !important;
     line-height: 1.4 !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* ── 입력 필드 배경 #EEF2FA ── */
