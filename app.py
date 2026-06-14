@@ -810,7 +810,7 @@ button.secondary:hover {
 /* 가이드 패널 내부 스타일 */
 #usage-guide {
     padding: 28px 20px 24px;
-    color: #fff;
+    color: #1A2540;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
     min-height: 100vh;
     box-sizing: border-box;
@@ -821,23 +821,23 @@ button.secondary:hover {
     gap: 12px;
     margin-bottom: 32px;
     padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid #D8E2F0;
 }
 .guide-logo-icon { font-size: 36px; line-height: 1; }
-.guide-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
-.guide-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.03em; }
+.guide-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #1B3A6B; }
+.guide-sub { font-size: 11px; color: #9BAAC4; margin-top: 2px; letter-spacing: 0.03em; }
 .guide-step {
     display: flex;
     gap: 12px;
     margin-bottom: 20px;
     padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid #EEF2FA;
 }
 .guide-step:last-of-type { border-bottom: none; }
 .guide-step-num {
     font-size: 11px;
     font-weight: 700;
-    color: rgba(255,255,255,0.35);
+    color: #9BAAC4;
     letter-spacing: 0.08em;
     flex-shrink: 0;
     padding-top: 2px;
@@ -847,27 +847,27 @@ button.secondary:hover {
     font-size: 13px;
     font-weight: 600;
     margin-bottom: 6px;
-    color: #fff;
+    color: #1A2540;
 }
 .guide-step-desc {
     font-size: 12px;
-    color: rgba(255,255,255,0.7);
+    color: #5A6A8A;
     line-height: 1.6;
 }
-.guide-step-desc b { color: #fff; font-weight: 600; }
-.guide-step-desc em { color: #93C5FD; font-style: normal; }
+.guide-step-desc b { color: #1B3A6B; font-weight: 600; }
+.guide-step-desc em { color: #2A52A0; font-style: normal; font-weight: 500; }
 .guide-tip {
     margin-top: 7px;
     font-size: 11px;
-    color: rgba(255,255,255,0.45);
-    background: rgba(255,255,255,0.07);
+    color: #9BAAC4;
+    background: #EEF2FA;
     border-radius: 6px;
     padding: 5px 8px;
 }
 .guide-footer {
     margin-top: 24px;
     font-size: 10px;
-    color: rgba(255,255,255,0.25);
+    color: #C4D4E8;
     text-align: center;
     letter-spacing: 0.04em;
 }
@@ -1088,7 +1088,7 @@ USAGE_GUIDE_HTML = """
     <span class="guide-logo-icon">👗</span>
     <div>
       <div class="guide-title">AI Closet</div>
-      <div class="guide-sub">스마트 AI 옷장 관리</div>
+      <div class="guide-sub">스마트 AI 옷장 관리 사용 가이드</div>
     </div>
   </div>
 
