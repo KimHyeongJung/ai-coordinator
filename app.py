@@ -943,8 +943,18 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                                 choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
                                 label="카테고리", interactive=True,
                             )
-                            edit_w_color = gr.Textbox(label="색상", interactive=True)
-                            edit_w_size = gr.Textbox(label="사이즈", interactive=True)
+                            with gr.Row():
+                                edit_w_color = gr.Textbox(label="색상", interactive=True)
+                                edit_w_style = gr.Textbox(label="스타일", interactive=True)
+                    edit_w_season = gr.Dropdown(
+                        choices=["봄", "여름", "가을", "겨울"],
+                        label="계절", multiselect=True, interactive=True,
+                    )
+                    with gr.Row():
+                        edit_w_price = gr.Textbox(label="가격", interactive=True)
+                        edit_w_purchase_date = gr.Textbox(label="구매시기", interactive=True)
+                    edit_w_wash = gr.Textbox(label="세탁방법", interactive=True)
+                    edit_w_size = gr.Textbox(label="사이즈", interactive=True)
                     with gr.Row():
                         save_edit_w_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
                         delete_w_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
@@ -1097,8 +1107,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _make_image_html(url: str | None) -> str:
         if url:
             return (
-                f'<img src="{url}" style="width:100%;height:160px;'
-                f'object-fit:cover;border-radius:10px;display:block" />'
+                f'<img src="{url}" style="width:100%;max-height:360px;'
+                f'object-fit:contain;border-radius:10px;display:block;background:#F7F9FC" />'
             )
         return (
             '<div style="width:100%;height:160px;background:#EEF2FA;border-radius:10px;'
@@ -1108,15 +1118,24 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     def _on_wardrobe_select(evt: gr.SelectData, items):
         row = evt.index[0]
+        empty = (-1, _make_image_html(None), "", "기타", "", "", [], "", "", "", "", gr.update(open=True))
         if not items or row < 0 or row >= len(items):
-            return -1, _make_image_html(None), "", "기타", "", "", gr.update(open=True)
+            return empty
         item = items[row]
+        season = item.get("season") or []
+        if isinstance(season, str):
+            season = [s.strip() for s in season.split(",") if s.strip()]
         return (
             row,
             _make_image_html(item.get("image_path")),
             item.get("name", ""),
             item.get("category", "기타"),
             item.get("color", ""),
+            item.get("style", ""),
+            season,
+            item.get("price") or "",
+            item.get("purchase_date") or "",
+            item.get("wash_instruction", ""),
             item.get("size") or "",
             gr.update(open=True),
         )
@@ -1124,21 +1143,41 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     wardrobe_df.select(
         fn=_on_wardrobe_select,
         inputs=[wardrobe_items_state],
-        outputs=[selected_wardrobe_idx, item_image_display, edit_w_name, edit_w_category, edit_w_color, edit_w_size, wardrobe_edit_acc],
+        outputs=[
+            selected_wardrobe_idx, item_image_display,
+            edit_w_name, edit_w_category, edit_w_color, edit_w_style,
+            edit_w_season, edit_w_price, edit_w_purchase_date, edit_w_wash,
+            edit_w_size, wardrobe_edit_acc,
+        ],
     )
 
     # 옷장 — 수정 저장
-    def _update_wardrobe(sel_idx, items, name, category, color, size):
+    def _update_wardrobe(sel_idx, items, name, category, color, style, season, price, purchase_date, wash, size):
         if sel_idx < 0 or not items or sel_idx >= len(items):
             return "수정할 항목을 먼저 선택해주세요.", [], []
         item = items[sel_idx]
-        storage.update_item(item["id"], {"name": name, "category": category, "color": color, "size": size})
+        storage.update_item(item["id"], {
+            "name": name,
+            "category": category,
+            "color": color,
+            "style": style,
+            "season": season if isinstance(season, list) else [],
+            "price": price or None,
+            "purchase_date": purchase_date or None,
+            "wash_instruction": wash,
+            "size": size or None,
+        })
         new_items = storage.load_wardrobe().get("items", [])
         return f"✅ '{name}' 수정 완료", dashboard.get_wardrobe_table(new_items), new_items
 
     save_edit_w_btn.click(
         fn=_update_wardrobe,
-        inputs=[selected_wardrobe_idx, wardrobe_items_state, edit_w_name, edit_w_category, edit_w_color, edit_w_size],
+        inputs=[
+            selected_wardrobe_idx, wardrobe_items_state,
+            edit_w_name, edit_w_category, edit_w_color, edit_w_style,
+            edit_w_season, edit_w_price, edit_w_purchase_date, edit_w_wash,
+            edit_w_size,
+        ],
         outputs=[edit_w_result, wardrobe_df, wardrobe_items_state],
     )
 
