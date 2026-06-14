@@ -800,9 +800,11 @@ function patchUploadText() {
     for (var i = 0; i < els.length; i++) {
         var el = els[i];
         var t = (el.innerText || '').trim();
-        if ((t.includes('드롭') || t.includes('클릭') || t.includes('Drop') || t.includes('Click') || t.includes('Upload'))
-            && el.children.length <= 5 && !el.querySelector('input')) {
-            el.style.cssText = 'display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:30px 24px!important;min-height:210px!important;gap:0!important;';
+        // file input 직접 포함 여부만 체크 (type="file" 한정), children 제한 완화
+        if ((t.includes('드롭') || t.includes('클릭') || t.includes('Drop') || t.includes('Click') || t.includes('업로드') || t.includes('Upload'))
+            && !el.querySelector('input[type="file"]')
+            && el.children.length <= 15) {
+            el.style.cssText = 'display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:30px 24px!important;min-height:180px!important;gap:0!important;';
             el.innerHTML =
                 '<div style="width:48px;height:48px;background:#EEF2FA;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px">' +
                 '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A6FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>' +
@@ -815,7 +817,7 @@ function patchUploadText() {
     return false;
 }
 if (!patchUploadText()) {
-    [300, 700, 1500].forEach(function(t) { setTimeout(patchUploadText, t); });
+    [300, 700, 1200, 2500].forEach(function(t) { setTimeout(patchUploadText, t); });
 }
 
 /* ── 결과 텍스트박스 자동 높이 조정 ── */
@@ -853,7 +855,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 with gr.Row():
                     image_input = gr.Image(
                         type="filepath",
-                        label="의류 사진 업로드",
+                        label=None,
+                        show_label=False,
                         elem_classes=["image-box"],
                     )
                     with gr.Column():
