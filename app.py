@@ -174,9 +174,15 @@ footer { display: none !important; }
 
 /* ── 탭 콘텐츠 영역 ── */
 .tab-content {
-    padding: 20px 24px 32px !important;
+    padding: 20px 0 32px !important;
     gap: 14px !important;
     border: none !important;
+}
+/* Gradio Soft 테마가 .block에 추가하는 좌우 패딩 제거 */
+.tabitem > .block,
+.tabitem > div > .block {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 /* ── 섹션 헤더 ── */
