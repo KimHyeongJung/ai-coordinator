@@ -208,13 +208,24 @@ footer { display: none !important; }
     background: var(--white) !important;
 }
 
-/* ── 이미지 업로드: 흰 바탕 + 네이비 점선 테두리 ── */
+/* ── 이미지 업로드: 흰 바탕 + 연한 점선 테두리 (목업 일치) ── */
 .image-box .wrap,
 .image-box .upload-container,
 .image-box > div > div {
-    border: 2px dashed #1B3A6B !important;
+    border: 1.5px dashed #D8E2F0 !important;
     border-radius: 12px !important;
     background: #ffffff !important;
+    min-height: 200px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    transition: border-color .15s !important;
+}
+.image-box .wrap:hover,
+.image-box .upload-container:hover {
+    border-color: #4A6FA5 !important;
 }
 .image-box,
 .image-box .block,
@@ -224,9 +235,9 @@ footer { display: none !important; }
     box-shadow: none !important;
 }
 /* 아이콘 색상 */
-.image-box svg { color: #4A6FA5 !important; }
+.image-box svg { color: #9BAAC4 !important; }
 .image-box svg path, .image-box svg polyline, .image-box svg line {
-    stroke: #4A6FA5 !important;
+    stroke: #9BAAC4 !important;
 }
 /* 기본 업로드 안내 텍스트 숨기기 (JS로 교체) */
 .image-box .file-name,
@@ -369,7 +380,7 @@ document.addEventListener('DOMContentLoaded', hideTabNav);
 setTimeout(hideTabNav, 500);
 setTimeout(hideTabNav, 1500);
 
-// 업로드 안내 문구 교체
+// 업로드 안내 문구 교체 (목업 디자인 일치)
 function patchUploadText(){
     var box = document.querySelector('.image-box');
     if(!box) return false;
@@ -377,13 +388,13 @@ function patchUploadText(){
     for(var i=0;i<els.length;i++){
         var el=els[i];
         var t=(el.innerText||'').trim();
-        // 기본 Gradio 업로드 안내 문구를 포함한 컨테이너 탐색
         if((t.includes('드롭')||t.includes('클릭')||t.includes('Drop')||t.includes('Click')||t.includes('Upload'))
             && el.children.length<=5 && !el.querySelector('input')){
+            el.style.cssText='display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:24px!important;min-height:200px!important;gap:0!important;';
             el.innerHTML=
-                '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4A6FA5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:10px"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>'+
-                '<strong style="display:block;font-size:14px;font-weight:700;color:#1A2540;margin-bottom:6px">의류 사진을 드래그해주세요</strong>'+
-                '<span style="display:block;font-size:12px;color:#5A6A8A">AI가 카테고리, 색상, 재질을 자동 분류합니다</span>';
+                '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9BAAC4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>'+
+                '<p style="font-size:13px;font-weight:600;color:#5A6A8A;margin:8px 0 4px 0;padding:0">의류 사진을 드래그하거나 클릭해서 업로드</p>'+
+                '<span style="font-size:11.5px;color:#9BAAC4;margin:0;padding:0;display:block">AI가 카테고리, 색상, 재질을 자동 분류합니다</span>';
             return true;
         }
     }
