@@ -24,6 +24,18 @@ from model_config import (
 
 logger = logging.getLogger(__name__)
 
+# WMO 날씨 코드 → 이모지 매핑
+WMO_EMOJI: dict[int, str] = {
+    0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+    45: "🌫️", 48: "🌫️",
+    51: "🌦️", 53: "🌦️", 55: "🌧️",
+    61: "🌧️", 63: "🌧️", 65: "🌧️",
+    71: "🌨️", 73: "🌨️", 75: "❄️", 77: "🌨️",
+    80: "⛈️", 81: "⛈️", 82: "⛈️",
+    85: "🌨️", 86: "❄️",
+    95: "⛈️", 96: "⛈️", 99: "⛈️",
+}
+
 # WMO 날씨 코드 → 한국어 설명 매핑
 WMO_CODE_MAP = {
     0: "맑음",
@@ -93,20 +105,35 @@ def get_weather(
         url = (
             f"{WEATHER_API_BASE}"
             f"?latitude={lat}&longitude={lon}"
-            "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode"
+            "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,"
+            "weathercode,wind_speed_10m_max"
+            "&hourly=relative_humidity_2m"
             "&timezone=Asia/Seoul&forecast_days=2"
         )
         resp = requests.get(url, timeout=5)
         resp.raise_for_status()
-        daily = resp.json().get("daily", {})
+        data = resp.json()
+        daily = data.get("daily", {})
+        hourly = data.get("hourly", {})
 
         idx = 1  # index 0 = 오늘, index 1 = 내일
         code = int((daily.get("weathercode") or [0, 0])[idx])
+
+        wind_kmh = (daily.get("wind_speed_10m_max") or [None, None])[idx]
+        wind_ms = round(wind_kmh / 3.6, 1) if wind_kmh is not None else None
+
+        # 내일 정오(noon) 습도: 오늘 0시부터 시작하는 hourly, 내일 12시 = index 36
+        humidity_list = hourly.get("relative_humidity_2m") or []
+        humidity = int(humidity_list[36]) if len(humidity_list) > 36 else None
+
         return {
             "temp_max": (daily.get("temperature_2m_max") or [None, None])[idx],
             "temp_min": (daily.get("temperature_2m_min") or [None, None])[idx],
             "precip": (daily.get("precipitation_sum") or [None, None])[idx],
             "weather_desc": WMO_CODE_MAP.get(code, "알 수 없음"),
+            "code": code,
+            "humidity": humidity,
+            "wind_ms": wind_ms,
             "date": "내일",
         }
     except Exception as e:
@@ -116,12 +143,94 @@ def get_weather(
             "temp_min": None,
             "precip": None,
             "weather_desc": "날씨 정보 불러오기 실패",
+            "code": 0,
+            "humidity": None,
+            "wind_ms": None,
             "date": "내일",
         }
 
 
+def _temp_tip(temp_min: float | None, temp_max: float | None) -> str:
+    if temp_min is None:
+        return ""
+    if temp_min < 5:
+        return "두꺼운 외투 필수"
+    if temp_min < 10:
+        return "아침 쌀쌀"
+    if temp_min < 15:
+        return "가벼운 겉옷 권장"
+    if temp_max is not None and temp_max > 28:
+        return "더위 대비 필요"
+    return ""
+
+
+def get_weather_html() -> str:
+    """날씨 정보를 리치 HTML 카드로 반환 (gr.HTML 출력용)."""
+    w = get_weather()
+    if w["temp_max"] is None:
+        return (
+            '<div class="weather-card" style="justify-content:center">'
+            '<span style="color:rgba(255,255,255,0.75);font-size:13px">'
+            '⚠️ 날씨 정보를 불러올 수 없습니다</span></div>'
+        )
+
+    code = w.get("code", 0)
+    emoji = WMO_EMOJI.get(code, "🌡️")
+    temp_str = f"{w['temp_max']}°C"
+    tip = _temp_tip(w["temp_min"], w["temp_max"])
+
+    sub = f"서울 · 내일 {w['weather_desc']}"
+    if tip:
+        sub += f", {tip}"
+
+    humidity = w.get("humidity")
+    wind_ms = w.get("wind_ms")
+    humidity_html = f'<div class="weather-stat">습도 {humidity}%</div>' if humidity is not None else ""
+    wind_html = f'<div class="weather-stat">바람 {wind_ms}m/s</div>' if wind_ms is not None else ""
+
+    return f"""<div class="weather-card">
+  <div class="weather-left">
+    <div class="weather-emoji">{emoji}</div>
+    <div>
+      <div class="weather-temp">{temp_str}</div>
+      <div class="weather-sub">{sub}</div>
+    </div>
+  </div>
+  <div class="weather-right">
+    {humidity_html}
+    {wind_html}
+    <div class="weather-source">Open-Meteo</div>
+  </div>
+</div>"""
+
+
+def get_initial_chat() -> list:
+    """앱 로드 시 챗봇 초기 인사 메시지."""
+    w = get_weather()
+    temp = w["temp_max"]
+    desc = w["weather_desc"]
+
+    if temp is None:
+        greeting = "안녕하세요! 날씨 정보를 불러오지 못했어요. 어떤 상황의 코디가 필요하세요?"
+    else:
+        if temp < 10:
+            feel = "꽤 춥네요"
+        elif temp < 18:
+            feel = "선선하네요"
+        elif temp < 24:
+            feel = "따뜻하네요"
+        else:
+            feel = "더운 날이네요"
+        greeting = (
+            f"안녕하세요! 내일 날씨를 확인했어요. "
+            f"{temp}°C로 {feel}. 어떤 상황의 코디가 필요하세요?"
+        )
+
+    return [{"role": "assistant", "content": greeting}]
+
+
 def get_weather_display() -> str:
-    """날씨 정보를 한 줄 문자열로 반환 (Gradio Textbox 출력용)."""
+    """날씨 정보를 한 줄 문자열로 반환 (레거시 호환용)."""
     w = get_weather()
     if w["temp_max"] is None:
         return f"⚠️ 날씨 정보를 불러올 수 없습니다. ({w['weather_desc']})"

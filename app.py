@@ -446,29 +446,54 @@ footer { display: none !important; }
     color: var(--navy);
 }
 
-/* ── 날씨 박스 ── */
-.weather-box > .block {
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
+/* ── 날씨 카드 (HTML) ── */
+.weather-card {
+    background: linear-gradient(135deg, #1D3E72 0%, #2A52A0 100%);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(27,58,107,0.25);
 }
-.weather-box textarea {
-    background: var(--navy) !important;
-    color: rgba(255,255,255,0.88) !important;
-    border: none !important;
-    border-radius: var(--radius-lg) !important;
-    padding: 16px 20px !important;
-    font-size: 13px !important;
-    line-height: 1.7 !important;
-    letter-spacing: 0.01em !important;
-    box-shadow: 0 4px 16px rgba(27,58,107,0.18) !important;
+.weather-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
-.weather-box label > span:first-child {
-    color: var(--text-muted) !important;
-    font-size: 10.5px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.07em !important;
+.weather-emoji {
+    font-size: 46px;
+    line-height: 1;
+}
+.weather-temp {
+    font-size: 34px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+}
+.weather-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 4px;
+    letter-spacing: 0.01em;
+}
+.weather-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+}
+.weather-stat {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.68);
+}
+.weather-source {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 2px;
 }
 
 /* ── 챗봇 ── */
@@ -487,12 +512,96 @@ footer { display: none !important; }
     border-radius: 14px 14px 4px 14px !important;
     border: none !important;
 }
+/* Bot 메시지: 흰 배경 + 회색 계열 텍스트 */
 .chatbot-box [data-testid="bot"] > div,
 .chatbot-box .message.bot .bubble {
-    background: var(--surface) !important;
-    color: var(--text) !important;
+    background: #FFFFFF !important;
     border: 1px solid var(--border) !important;
     border-radius: 14px 14px 14px 4px !important;
+}
+.chatbot-box [data-testid="bot"] p,
+.chatbot-box [data-testid="bot"] li,
+.chatbot-box [data-testid="bot"] span,
+.chatbot-box [data-testid="bot"] div {
+    color: #5A6A8A !important;
+}
+.chatbot-box [data-testid="bot"] strong,
+.chatbot-box [data-testid="bot"] b {
+    color: var(--navy-light) !important;
+    font-weight: 600 !important;
+}
+
+/* ── 채팅 입력 (Pill 형태) ── */
+.chat-input-row {
+    align-items: center !important;
+    gap: 10px !important;
+}
+.chat-input-row > .block,
+.chat-input-row > div {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+#chat-input > .block,
+#chat-input .block {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+#chat-input textarea,
+#chat-input input[type="text"] {
+    border-radius: 50px !important;
+    padding: 12px 22px !important;
+    border: 1.5px solid var(--border) !important;
+    background: var(--white) !important;
+    color: var(--text) !important;
+    font-size: 13px !important;
+    resize: none !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+    line-height: 1.5 !important;
+    overflow-y: hidden !important;
+    box-shadow: none !important;
+}
+#chat-input textarea:focus,
+#chat-input input[type="text"]:focus {
+    border-color: var(--navy-mid) !important;
+    box-shadow: 0 0 0 3px rgba(74,111,165,0.12) !important;
+    outline: none !important;
+}
+
+/* ── 전송 버튼 (원형) ── */
+#chat-send-btn,
+#chat-send-btn > .block {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    box-shadow: none !important;
+}
+#chat-send-btn button {
+    background: var(--navy) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    padding: 0 !important;
+    font-size: 19px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(27,58,107,0.3) !important;
+    transition: background 0.15s, transform 0.1s !important;
+    cursor: pointer !important;
+}
+#chat-send-btn button:hover {
+    background: var(--navy-light) !important;
+    transform: scale(1.06) !important;
+}
+#chat-send-btn button:active {
+    transform: scale(0.97) !important;
 }
 
 /* ── 데이터프레임 ── */
@@ -865,24 +974,26 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Base()) as dem
                     </div>
                 """)
                 with gr.Column(elem_classes=["tab-content"]):
-                    weather_info_box = gr.Textbox(
-                        label="내일 날씨", interactive=False,
-                        elem_classes=["weather-box"],
-                    )
+                    weather_html = gr.HTML(value="<div class='weather-card'></div>")
                     chatbot = gr.Chatbot(
-                        label="AI 스타일리스트",
-                        height=380,
+                        label=None,
+                        show_label=False,
+                        height=340,
                         type="messages",
                         elem_classes=["chatbot-box"],
                     )
-                    with gr.Row():
+                    with gr.Row(elem_classes=["chat-input-row"]):
                         chat_input = gr.Textbox(
                             label="", show_label=False,
-                            placeholder="예: 내일 회사에 입고 갈 옷 골라줘",
+                            placeholder="날씨 보고 내일 코디 추천해줘...",
                             scale=4,
+                            lines=1,
+                            max_lines=1,
+                            elem_id="chat-input",
                         )
                         chat_btn = gr.Button(
-                            "전송", scale=1, elem_classes=["btn-primary"]
+                            "↑", scale=0, min_width=46,
+                            elem_id="chat-send-btn",
                         )
                     clear_btn = gr.Button(
                         "대화 초기화", elem_classes=["btn-secondary"]
@@ -947,14 +1058,14 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Base()) as dem
 
     # 앱 로드 시 초기 데이터
     def _initial_load():
-        weather = daily_look.get_weather_display()
         wardrobe_table = dashboard.get_wardrobe_table()
         outfit_table = dashboard.get_outfit_table()
         stats = dashboard.get_stats()
         return (
             wardrobe_table,
             outfit_table,
-            weather,
+            daily_look.get_weather_html(),
+            daily_look.get_initial_chat(),
             stats["total_items"],
             stats["total_outfits"],
             dashboard.build_stats_cards(stats),
@@ -965,7 +1076,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Base()) as dem
         outputs=[
             wardrobe_df,
             outfit_df,
-            weather_info_box,
+            weather_html,
+            chatbot,
             total_items_num,
             total_outfits_num,
             stats_html,
