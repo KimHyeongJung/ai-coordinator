@@ -457,6 +457,38 @@ button.secondary:hover {
     color: #6B7484; /* 레이블 텍스트 색상 (보라색) */
 }
 
+/* ── 인라인 드롭다운 (라벨 + 입력 가로 정렬) ── */
+.inline-dd {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 0 !important;
+}
+.inline-dd label {
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+.inline-dd label > span:first-child,
+.inline-dd [data-testid="block-label"] {
+    margin-bottom: 0 !important;
+    white-space: nowrap !important;
+}
+.inline-dd .wrap,
+.inline-dd .wrap-inner {
+    flex: 1 !important;
+    margin: 0 !important;
+}
+
 /* ── 결과 텍스트 박스 (자동 확장) ── */
 .result-box textarea {
     background: #EEF2FA !important;
@@ -483,7 +515,7 @@ button.secondary:hover {
 }
 .stat-box > .block { background: var(--white) !important; border: none !important; padding: 22px 16px 18px !important; }
 .stat-box input[type="number"] {
-    font-size: 36px !important; font-weight: 700 !important; color: var(--navy) !important;
+    font-size: 36px !important; font-weight: 700 !important; color: #6B7484 !important;
     border: none !important; background: transparent !important;
     text-align: center !important; padding: 4px 0 !important; width: 100% !important; box-shadow: none !important;
 }
@@ -922,10 +954,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     situation_input = gr.Dropdown(
                         choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
                         label="상황", value="캐주얼",
+                        elem_classes=["inline-dd"],
                     )
                     season_input = gr.Dropdown(
                         choices=["봄", "여름", "가을", "겨울", "사계절"],
                         label="계절", value="봄",
+                        elem_classes=["inline-dd"],
                     )
                     gen_btn = gr.Button(
                         "✨ AI 코디 생성", elem_classes=["btn-primary"]
