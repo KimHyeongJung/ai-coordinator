@@ -103,11 +103,14 @@ footer { display: none !important; }
     min-height: 100vh !important;
 }
 
-/* ── Gradio 탭 네비 숨기기 (JS 사이드바가 대신함) ── */
-#content-tabs .tab-nav {
+/* ── 상단 탭 네비 완전히 숨기기 ── */
+.tab-nav {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
 }
-#content-tabs .tabitem {
+.tabitem {
     padding: 0 !important;
     border: none !important;
     background: transparent !important;
@@ -192,21 +195,40 @@ footer { display: none !important; }
     border-color: var(--border) !important;
     border-radius: 8px !important;
     font-size: 13px !important;
-    background: var(--white) !important;
+    background: var(--navy-pale) !important;
     color: var(--text) !important;
 }
 .block input:focus, .block textarea:focus {
     border-color: var(--navy-light) !important;
     box-shadow: 0 0 0 2px rgba(42,82,160,0.1) !important;
-}
-
-/* ── 이미지 업로드 ── */
-.image-box .wrap {
-    border: 1.5px dashed var(--border) !important;
-    border-radius: 12px !important;
     background: var(--white) !important;
 }
-.image-box .wrap:hover { border-color: var(--navy-mid) !important; }
+
+/* ── 이미지 업로드: 흰 바탕 + 네이비 점선 테두리 ── */
+.image-box .wrap,
+.image-box .upload-container,
+.image-box > div > div {
+    border: 2px dashed #1B3A6B !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+}
+.image-box,
+.image-box .block,
+.image-box > div {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* 아이콘 색상 */
+.image-box svg { color: #4A6FA5 !important; }
+.image-box svg path, .image-box svg polyline, .image-box svg line {
+    stroke: #4A6FA5 !important;
+}
+/* 기본 업로드 안내 텍스트 숨기기 (JS로 교체) */
+.image-box .file-name,
+.image-box .or-text {
+    display: none !important;
+}
 
 /* ── 결과 텍스트 ── */
 .result-box textarea {
@@ -322,16 +344,49 @@ SIDEBAR_HTML = """
 
 <script>
 function sbGo(idx){
+    // 사이드바 active 상태 업데이트
     [0,1,2,3].forEach(function(i){
         var el=document.getElementById('sb-'+i);
         if(el) el.classList.toggle('active', i===idx);
     });
+    // Gradio 탭 버튼 클릭 (숨겨져 있어도 JS .click()은 동작함)
     setTimeout(function(){
-        var tabs=document.getElementById('content-tabs');
-        if(!tabs) return;
-        var btns=tabs.querySelectorAll('button[role="tab"],.tab-nav button');
+        var btns = document.querySelectorAll('.tab-nav button, [role="tab"]');
         if(btns[idx]) btns[idx].click();
     }, 10);
+}
+// 탭 nav 숨기기
+function hideTabNav(){
+    document.querySelectorAll('.tab-nav').forEach(function(el){
+        el.style.cssText='display:none!important;height:0!important;overflow:hidden!important';
+    });
+}
+document.addEventListener('DOMContentLoaded', hideTabNav);
+setTimeout(hideTabNav, 500);
+setTimeout(hideTabNav, 1500);
+
+// 업로드 안내 문구 교체
+function patchUploadText(){
+    var box = document.querySelector('.image-box');
+    if(!box) return false;
+    var els = Array.from(box.getElementsByTagName('*'));
+    for(var i=0;i<els.length;i++){
+        var el=els[i];
+        var t=(el.innerText||'').trim();
+        // 기본 Gradio 업로드 안내 문구를 포함한 컨테이너 탐색
+        if((t.includes('드롭')||t.includes('클릭')||t.includes('Drop')||t.includes('Click')||t.includes('Upload'))
+            && el.children.length<=5 && !el.querySelector('input')){
+            el.innerHTML=
+                '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4A6FA5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:10px"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>'+
+                '<strong style="display:block;font-size:14px;font-weight:700;color:#1A2540;margin-bottom:6px">의류 사진을 드래그해주세요</strong>'+
+                '<span style="display:block;font-size:12px;color:#5A6A8A">AI가 카테고리, 색상, 재질을 자동 분류합니다</span>';
+            return true;
+        }
+    }
+    return false;
+}
+if(!patchUploadText()){
+    [300,700,1500].forEach(function(t){ setTimeout(patchUploadText,t); });
 }
 </script>
 """
