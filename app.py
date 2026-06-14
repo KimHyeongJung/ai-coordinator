@@ -777,6 +777,100 @@ button.secondary:hover {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #C4D4E8; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--navy-mid); }
+
+/* ── 2단 레이아웃 ── */
+#main-layout {
+    gap: 0 !important;
+    align-items: stretch !important;
+    min-height: 100vh !important;
+}
+#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; }
+
+/* 좌측 가이드 패널 */
+#left-guide {
+    background: linear-gradient(160deg, #1B3A6B 0%, #2A52A0 60%, #1E4D8C 100%) !important;
+    border-right: 1px solid rgba(255,255,255,0.1) !important;
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    flex-shrink: 0 !important;
+}
+#left-guide > .block { background: transparent !important; border: none !important; padding: 0 !important; }
+#left-guide .block { background: transparent !important; border: none !important; }
+
+/* 우측 서비스 패널 */
+#right-service {
+    background: var(--surface) !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+}
+#right-service > .block { background: transparent !important; border: none !important; padding: 0 !important; }
+
+/* 가이드 패널 내부 스타일 */
+#usage-guide {
+    padding: 28px 20px 24px;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+.guide-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.guide-logo-icon { font-size: 36px; line-height: 1; }
+.guide-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.guide-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; letter-spacing: 0.03em; }
+.guide-step {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.guide-step:last-of-type { border-bottom: none; }
+.guide-step-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+    padding-top: 2px;
+    width: 20px;
+}
+.guide-step-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #fff;
+}
+.guide-step-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+}
+.guide-step-desc b { color: #fff; font-weight: 600; }
+.guide-step-desc em { color: #93C5FD; font-style: normal; }
+.guide-tip {
+    margin-top: 7px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 5px 8px;
+}
+.guide-footer {
+    margin-top: 24px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    text-align: center;
+    letter-spacing: 0.04em;
+}
 """
 
 # ── 상단 네비게이션 HTML ──────────────────────────────────────────────────────
@@ -987,228 +1081,308 @@ def _make_outfit_gallery_html(item_ids: list, wardrobe_map: dict) -> str:
 
 
 # ── Blocks 레이아웃 ───────────────────────────────────────────────────────────
+
+USAGE_GUIDE_HTML = """
+<div id="usage-guide">
+  <div class="guide-logo">
+    <span class="guide-logo-icon">👗</span>
+    <div>
+      <div class="guide-title">AI Closet</div>
+      <div class="guide-sub">스마트 AI 옷장 관리</div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="guide-step-num">01</div>
+    <div class="guide-step-body">
+      <div class="guide-step-title">📸 옷장에 옷 추가하기</div>
+      <div class="guide-step-desc">
+        <b>옷장</b> 탭 → 사진을 업로드하거나 직접 설명을 입력<br>
+        AI(Florence-2)가 자동으로 카테고리·색상·계절을 분류해 저장합니다.
+      </div>
+      <div class="guide-tip">💡 사진 없이 <em>비고란</em>에 텍스트로도 추가 가능</div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="guide-step-num">02</div>
+    <div class="guide-step-body">
+      <div class="guide-step-title">✏️ 의류 수정 / 삭제</div>
+      <div class="guide-step-desc">
+        저장된 의류 목록 테이블의 행을 클릭하면<br>
+        <b>선택 항목 수정 / 삭제</b> 패널이 열립니다.<br>
+        이름·카테고리·색상·계절 등 모든 항목을 수정할 수 있습니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="guide-step-num">03</div>
+    <div class="guide-step-body">
+      <div class="guide-step-title">✨ AI 코디 생성</div>
+      <div class="guide-step-desc">
+        <b>코디</b> 탭 → 상황·계절 선택 후<br>
+        <em>AI 코디 생성</em> 버튼 클릭<br>
+        AI가 옷장 의류를 조합해 맞춤 코디를 추천·저장합니다.
+      </div>
+      <div class="guide-tip">💡 저장된 코디는 상황·계절·태그 수정 가능</div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="guide-step-num">04</div>
+    <div class="guide-step-body">
+      <div class="guide-step-title">🌤️ 데일리룩 추천</div>
+      <div class="guide-step-desc">
+        <b>데일리룩</b> 탭 → 채팅으로 오늘 코디 질문<br>
+        AI가 <em>날씨 + 저장된 코디</em>를 바탕으로 추천하고<br>
+        코디명 선택 시 착용 의류 사진도 확인할 수 있습니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="guide-step-num">05</div>
+    <div class="guide-step-body">
+      <div class="guide-step-title">📊 대시보드</div>
+      <div class="guide-step-desc">
+        옷장 통계(카테고리·계절·상황별) 현황을 한눈에 확인합니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    Powered by Florence-2 &amp; Qwen2.5
+  </div>
+</div>
+"""
+
 with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as demo:
 
-    gr.HTML(TOP_NAV_HTML)
+    with gr.Row(elem_id="main-layout"):
+        with gr.Column(scale=1, min_width=280, elem_id="left-guide"):
+            gr.HTML(USAGE_GUIDE_HTML)
+        with gr.Column(scale=2, min_width=0, elem_id="right-service"):
+            gr.HTML(TOP_NAV_HTML)
 
-    with gr.Tabs(elem_id="content-tabs"):
+            with gr.Tabs(elem_id="content-tabs"):
 
-        # ── 탭 0: 옷장 ────────────────────────────────────────────────────
-        with gr.Tab("옷장"):
-            gr.HTML("""
-                <div class="topbar" style="position:sticky;top:58px;z-index:9">
-                    <span class="topbar-title">내 옷장</span>
-                    <div class="topbar-meta">
-                        <span class="topbar-badge">Florence-2 Vision</span>
-                    </div>
-                </div>
-            """)
-            with gr.Column(elem_classes=["tab-content"]):
-                gr.HTML('<div class="section-header">의류 추가</div>')
-                with gr.Row():
-                    image_input = gr.Image(
-                        type="filepath",
-                        label=None,
-                        placeholder="여기에 이미지를 드래그하거나 클릭하여 업로드하세요.",
-                        show_label=False,
-                        elem_classes=["image-box"],
-                    )
-                    with gr.Column():
-                        description_input = gr.Textbox(
-                            label="비고",
-                            placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
-                            lines=2,
-                        )
-                        size_input = gr.Textbox(
-                            label="사이즈", placeholder="S, M, L, 250 등"
-                        )
-                        price_input = gr.Textbox(
-                            label="구매 가격", placeholder="50000"
-                        )
-                        date_input = gr.Textbox(
-                            label="구매 시기", placeholder="2024-03"
-                        )
-                        upload_btn = gr.Button(
-                            "AI 분류 및 추가", elem_classes=["btn-primary"]
-                        )
+                # ── 탭 0: 옷장 ────────────────────────────────────────────────────
+                with gr.Tab("옷장"):
+                    gr.HTML("""
+                        <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                            <span class="topbar-title">내 옷장</span>
+                            <div class="topbar-meta">
+                                <span class="topbar-badge">Florence-2 Vision</span>
+                            </div>
+                        </div>
+                    """)
+                    with gr.Column(elem_classes=["tab-content"]):
+                        gr.HTML('<div class="section-header">의류 추가</div>')
+                        with gr.Row():
+                            image_input = gr.Image(
+                                type="filepath",
+                                label=None,
+                                placeholder="여기에 이미지를 드래그하거나 클릭하여 업로드하세요.",
+                                show_label=False,
+                                elem_classes=["image-box"],
+                            )
+                            with gr.Column():
+                                description_input = gr.Textbox(
+                                    label="비고",
+                                    placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
+                                    lines=2,
+                                )
+                                size_input = gr.Textbox(
+                                    label="사이즈", placeholder="S, M, L, 250 등"
+                                )
+                                price_input = gr.Textbox(
+                                    label="구매 가격", placeholder="50000"
+                                )
+                                date_input = gr.Textbox(
+                                    label="구매 시기", placeholder="2024-03"
+                                )
+                                upload_btn = gr.Button(
+                                    "AI 분류 및 추가", elem_classes=["btn-primary"]
+                                )
 
-                upload_result = gr.Textbox(
-                    label="분류 결과", interactive=False,
-                    elem_classes=["result-box"],
-                    lines=3, max_lines=20,
-                )
-                gr.HTML('<div class="section-header">저장된 의류 목록</div>')
-                wardrobe_df = gr.Dataframe(
-                    headers=["이름", "카테고리", "색상", "스타일", "계절", "가격", "구매시기", "세탁방법"],
-                    label=None,
-                    elem_classes=["table-box"],
-                )
-                wardrobe_items_state = gr.State([])
-                selected_wardrobe_idx = gr.State(-1)
-                refresh_wardrobe_btn = gr.Button(
-                    "목록 새로고침", elem_classes=["btn-secondary"]
-                )
-                with gr.Accordion("✏️ 선택 항목 수정 / 삭제", open=False) as wardrobe_edit_acc:
-                    gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
-                    with gr.Row():
-                        item_image_display = gr.HTML(
-                            value='<div style="width:100%;height:160px;background:#EEF2FA;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#9BAAC4;font-size:12px">사진 없음</div>'
+                        upload_result = gr.Textbox(
+                            label="분류 결과", interactive=False,
+                            elem_classes=["result-box"],
+                            lines=3, max_lines=20,
                         )
-                        with gr.Column():
-                            edit_w_name = gr.Textbox(label="이름", interactive=True)
-                            edit_w_category = gr.Dropdown(
-                                choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
-                                label="카테고리", interactive=True,
+                        gr.HTML('<div class="section-header">저장된 의류 목록</div>')
+                        wardrobe_df = gr.Dataframe(
+                            headers=["이름", "카테고리", "색상", "스타일", "계절", "가격", "구매시기", "세탁방법"],
+                            label=None,
+                            elem_classes=["table-box"],
+                        )
+                        wardrobe_items_state = gr.State([])
+                        selected_wardrobe_idx = gr.State(-1)
+                        refresh_wardrobe_btn = gr.Button(
+                            "목록 새로고침", elem_classes=["btn-secondary"]
+                        )
+                        with gr.Accordion("✏️ 선택 항목 수정 / 삭제", open=False) as wardrobe_edit_acc:
+                            gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
+                            with gr.Row():
+                                item_image_display = gr.HTML(
+                                    value='<div style="width:100%;height:160px;background:#EEF2FA;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#9BAAC4;font-size:12px">사진 없음</div>'
+                                )
+                                with gr.Column():
+                                    edit_w_name = gr.Textbox(label="이름", interactive=True)
+                                    edit_w_category = gr.Dropdown(
+                                        choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
+                                        label="카테고리", interactive=True,
+                                    )
+                                    with gr.Row():
+                                        edit_w_color = gr.Textbox(label="색상", interactive=True)
+                                        edit_w_style = gr.Textbox(label="스타일", interactive=True)
+                            edit_w_season = gr.CheckboxGroup(
+                                choices=["봄", "여름", "가을", "겨울"],
+                                label="계절", interactive=True,
+                                elem_id="edit-w-season",
                             )
                             with gr.Row():
-                                edit_w_color = gr.Textbox(label="색상", interactive=True)
-                                edit_w_style = gr.Textbox(label="스타일", interactive=True)
-                    edit_w_season = gr.CheckboxGroup(
-                        choices=["봄", "여름", "가을", "겨울"],
-                        label="계절", interactive=True,
-                        elem_id="edit-w-season",
-                    )
-                    with gr.Row():
-                        edit_w_price = gr.Textbox(label="가격", interactive=True)
-                        edit_w_purchase_date = gr.Textbox(label="구매시기", interactive=True)
-                    edit_w_wash = gr.Textbox(label="세탁방법", interactive=True)
-                    edit_w_size = gr.Textbox(label="사이즈", interactive=True)
-                    with gr.Row():
-                        save_edit_w_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
-                        delete_w_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
-                    edit_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
+                                edit_w_price = gr.Textbox(label="가격", interactive=True)
+                                edit_w_purchase_date = gr.Textbox(label="구매시기", interactive=True)
+                            edit_w_wash = gr.Textbox(label="세탁방법", interactive=True)
+                            edit_w_size = gr.Textbox(label="사이즈", interactive=True)
+                            with gr.Row():
+                                save_edit_w_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
+                                delete_w_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
+                            edit_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
-        # ── 탭 1: 코디 ────────────────────────────────────────────────────
-        with gr.Tab("코디"):
-            gr.HTML("""
-                <div class="topbar" style="position:sticky;top:58px;z-index:9">
-                    <span class="topbar-title">코디 목록</span>
-                    <div class="topbar-meta">
-                        <span class="topbar-pill">✨ AI 생성 지원</span>
-                    </div>
-                </div>
-            """)
-            with gr.Column(elem_classes=["tab-content"]):
-                gr.HTML('<div class="section-header">AI 코디 생성</div>')
-                with gr.Row():
-                    situation_input = gr.Dropdown(
-                        choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
-                        label="상황", value="캐주얼",
-                    )
-                    season_input = gr.Dropdown(
-                        choices=["봄", "여름", "가을", "겨울", "사계절"],
-                        label="계절", value="봄",
-                    )
-                    gen_btn = gr.Button(
-                        "✨ AI 코디 생성", elem_classes=["btn-primary"]
-                    )
+                # ── 탭 1: 코디 ────────────────────────────────────────────────────
+                with gr.Tab("코디"):
+                    gr.HTML("""
+                        <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                            <span class="topbar-title">코디 목록</span>
+                            <div class="topbar-meta">
+                                <span class="topbar-pill">✨ AI 생성 지원</span>
+                            </div>
+                        </div>
+                    """)
+                    with gr.Column(elem_classes=["tab-content"]):
+                        gr.HTML('<div class="section-header">AI 코디 생성</div>')
+                        with gr.Row():
+                            situation_input = gr.Dropdown(
+                                choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
+                                label="상황", value="캐주얼",
+                            )
+                            season_input = gr.Dropdown(
+                                choices=["봄", "여름", "가을", "겨울", "사계절"],
+                                label="계절", value="봄",
+                            )
+                            gen_btn = gr.Button(
+                                "✨ AI 코디 생성", elem_classes=["btn-primary"]
+                            )
 
-                outfit_result = gr.Textbox(
-                    label="생성 결과", interactive=False,
-                    elem_classes=["result-box"],
-                    lines=3, max_lines=20,
-                )
-                gr.HTML('<div class="section-header">저장된 코디 목록</div>')
-                outfit_df = gr.Dataframe(
-                    headers=["코디명", "상황", "계절", "태그", "착용 의류", "AI생성", "생성일"],
-                    label=None,
-                    elem_classes=["table-box"],
-                )
-                outfit_items_state = gr.State([])
-                selected_outfit_idx = gr.State(-1)
-                with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
-                    gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
-                    gr.HTML('<div style="font-size:11px;font-weight:600;color:#5A6A8A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">착용 의류</div>')
-                    outfit_items_gallery = gr.HTML(
-                        value='<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
-                    )
-                    edit_o_name = gr.Textbox(label="코디명", interactive=True)
-                    edit_o_situation = gr.CheckboxGroup(
-                        choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
-                        label="상황", interactive=True,
-                        elem_id="edit-o-situation",
-                    )
-                    edit_o_season = gr.CheckboxGroup(
-                        choices=["봄", "여름", "가을", "겨울", "사계절"],
-                        label="계절", interactive=True,
-                        elem_id="edit-o-season",
-                    )
-                    edit_o_tags = gr.Textbox(label="태그 (쉼표로 구분)", interactive=True)
-                    with gr.Row():
-                        save_edit_o_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
-                        delete_o_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
-                    edit_o_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
+                        outfit_result = gr.Textbox(
+                            label="생성 결과", interactive=False,
+                            elem_classes=["result-box"],
+                            lines=3, max_lines=20,
+                        )
+                        gr.HTML('<div class="section-header">저장된 코디 목록</div>')
+                        outfit_df = gr.Dataframe(
+                            headers=["코디명", "상황", "계절", "태그", "착용 의류", "AI생성", "생성일"],
+                            label=None,
+                            elem_classes=["table-box"],
+                        )
+                        outfit_items_state = gr.State([])
+                        selected_outfit_idx = gr.State(-1)
+                        with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
+                            gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
+                            gr.HTML('<div style="font-size:11px;font-weight:600;color:#5A6A8A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">착용 의류</div>')
+                            outfit_items_gallery = gr.HTML(
+                                value='<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
+                            )
+                            edit_o_name = gr.Textbox(label="코디명", interactive=True)
+                            edit_o_situation = gr.CheckboxGroup(
+                                choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
+                                label="상황", interactive=True,
+                                elem_id="edit-o-situation",
+                            )
+                            edit_o_season = gr.CheckboxGroup(
+                                choices=["봄", "여름", "가을", "겨울", "사계절"],
+                                label="계절", interactive=True,
+                                elem_id="edit-o-season",
+                            )
+                            edit_o_tags = gr.Textbox(label="태그 (쉼표로 구분)", interactive=True)
+                            with gr.Row():
+                                save_edit_o_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
+                                delete_o_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
+                            edit_o_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
-        # ── 탭 2: 대시보드 ────────────────────────────────────────────────
-        with gr.Tab("대시보드"):
-            gr.HTML("""
-                <div class="topbar" style="position:sticky;top:58px;z-index:9">
-                    <span class="topbar-title">옷장 대시보드</span>
-                    <div class="topbar-meta">
-                        <span class="topbar-badge">실시간 통계</span>
-                    </div>
-                </div>
-            """)
-            with gr.Column(elem_classes=["tab-content"]):
-                with gr.Row():
-                    total_items_num = gr.Number(
-                        label="총 의류 수", interactive=False,
-                        elem_classes=["stat-box"],
-                    )
-                    total_outfits_num = gr.Number(
-                        label="저장된 코디", interactive=False,
-                        elem_classes=["stat-box"],
-                    )
-                gr.HTML('<div class="section-header">카테고리별 통계</div>')
-                stats_html = gr.HTML(value="<div class='sc-wrap'></div>")
-                dash_refresh_btn = gr.Button(
-                    "통계 새로고침", elem_classes=["btn-secondary"]
-                )
+                # ── 탭 2: 대시보드 ────────────────────────────────────────────────
+                with gr.Tab("대시보드"):
+                    gr.HTML("""
+                        <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                            <span class="topbar-title">옷장 대시보드</span>
+                            <div class="topbar-meta">
+                                <span class="topbar-badge">실시간 통계</span>
+                            </div>
+                        </div>
+                    """)
+                    with gr.Column(elem_classes=["tab-content"]):
+                        with gr.Row():
+                            total_items_num = gr.Number(
+                                label="총 의류 수", interactive=False,
+                                elem_classes=["stat-box"],
+                            )
+                            total_outfits_num = gr.Number(
+                                label="저장된 코디", interactive=False,
+                                elem_classes=["stat-box"],
+                            )
+                        gr.HTML('<div class="section-header">카테고리별 통계</div>')
+                        stats_html = gr.HTML(value="<div class='sc-wrap'></div>")
+                        dash_refresh_btn = gr.Button(
+                            "통계 새로고침", elem_classes=["btn-secondary"]
+                        )
 
-        # ── 탭 3: 데일리룩 ────────────────────────────────────────────────
-        with gr.Tab("데일리룩"):
-            gr.HTML("""
-                <div class="topbar" style="position:sticky;top:58px;z-index:9">
-                    <span class="topbar-title">AI 데일리룩 추천</span>
-                    <div class="topbar-meta">
-                        <span class="topbar-badge">Qwen2.5 Vision</span>
-                    </div>
-                </div>
-            """)
-            with gr.Column(elem_classes=["tab-content"]):
-                weather_html = gr.HTML(value="<div class='weather-card'></div>")
-                chatbot = gr.Chatbot(
-                    label=None,
-                    show_label=False,
-                    height=340,
-                    type="messages",
-                    elem_classes=["chatbot-box"],
-                )
-                with gr.Row(elem_classes=["chat-input-row"]):
-                    chat_input = gr.Textbox(
-                        label="", show_label=False,
-                        placeholder="날씨 보고 내일 코디 추천해줘...",
-                        scale=10,
-                        lines=1,
-                        max_lines=1,
-                        elem_id="chat-input",
-                    )
-                    chat_btn = gr.Button(
-                        "➤",
-                        scale=1,
-                        elem_id="chat-send-btn",
-                    )
-                clear_btn = gr.Button(
-                    "대화 초기화", elem_classes=["btn-secondary"]
-                )
-                gr.HTML('<div class="section-header">코디 상세 보기</div>')
-                daily_outfit_select = gr.Dropdown(
-                    label="코디 선택 (AI가 추천한 코디명을 여기서 선택하면 이미지를 확인할 수 있습니다)",
-                    choices=[],
-                    interactive=True,
-                    elem_classes=["daily-outfit-select"],
-                )
-                daily_outfit_gallery = gr.HTML(value="")
+                # ── 탭 3: 데일리룩 ────────────────────────────────────────────────
+                with gr.Tab("데일리룩"):
+                    gr.HTML("""
+                        <div class="topbar" style="position:sticky;top:58px;z-index:9">
+                            <span class="topbar-title">AI 데일리룩 추천</span>
+                            <div class="topbar-meta">
+                                <span class="topbar-badge">Qwen2.5 Vision</span>
+                            </div>
+                        </div>
+                    """)
+                    with gr.Column(elem_classes=["tab-content"]):
+                        weather_html = gr.HTML(value="<div class='weather-card'></div>")
+                        chatbot = gr.Chatbot(
+                            label=None,
+                            show_label=False,
+                            height=340,
+                            type="messages",
+                            elem_classes=["chatbot-box"],
+                        )
+                        with gr.Row(elem_classes=["chat-input-row"]):
+                            chat_input = gr.Textbox(
+                                label="", show_label=False,
+                                placeholder="날씨 보고 내일 코디 추천해줘...",
+                                scale=10,
+                                lines=1,
+                                max_lines=1,
+                                elem_id="chat-input",
+                            )
+                            chat_btn = gr.Button(
+                                "➤",
+                                scale=1,
+                                elem_id="chat-send-btn",
+                            )
+                        clear_btn = gr.Button(
+                            "대화 초기화", elem_classes=["btn-secondary"]
+                        )
+                        gr.HTML('<div class="section-header">코디 상세 보기</div>')
+                        daily_outfit_select = gr.Dropdown(
+                            label="코디 선택 (AI가 추천한 코디명을 여기서 선택하면 이미지를 확인할 수 있습니다)",
+                            choices=[],
+                            interactive=True,
+                            elem_classes=["daily-outfit-select"],
+                        )
+                        daily_outfit_gallery = gr.HTML(value="")
 
     # ── 이벤트 연결 ──────────────────────────────────────────────────────────
 
