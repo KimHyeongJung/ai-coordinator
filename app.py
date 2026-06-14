@@ -781,31 +781,37 @@ button.secondary:hover {
 /* ── 2단 레이아웃 ── */
 #main-layout {
     gap: 0 !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
     min-height: 100vh !important;
 }
-#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; }
+#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; height: auto !important; }
 
 /* 좌측 가이드 패널 */
 #left-guide {
-    background: linear-gradient(160deg, #1B3A6B 0%, #2A52A0 60%, #1E4D8C 100%) !important;
-    border-right: 1px solid rgba(255,255,255,0.1) !important;
+    border-right: 1px solid #D8E2F0 !important;
     position: sticky !important;
     top: 0 !important;
     height: 100vh !important;
     overflow-y: auto !important;
     flex-shrink: 0 !important;
+    align-self: flex-start !important;
 }
-#left-guide > .block { background: transparent !important; border: none !important; padding: 0 !important; }
+#left-guide > .block { background: transparent !important; border: none !important; padding: 0 !important; height: auto !important; }
 #left-guide .block { background: transparent !important; border: none !important; }
 
 /* 우측 서비스 패널 */
 #right-service {
     background: var(--surface) !important;
-    min-height: 100vh !important;
-    overflow-y: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    align-self: flex-start !important;
 }
-#right-service > .block { background: transparent !important; border: none !important; padding: 0 !important; }
+#right-service > .block { background: transparent !important; border: none !important; padding: 0 !important; height: auto !important; }
+
+/* 탭·블록 높이 자동 */
+#right-service .tabitem,
+#right-service .tabitem > div,
+#right-service .block { height: auto !important; min-height: unset !important; }
 
 /* 가이드 패널 내부 스타일 */
 #usage-guide {
