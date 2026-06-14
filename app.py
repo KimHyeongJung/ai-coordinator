@@ -584,8 +584,39 @@ button.secondary:hover {
 .table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; box-shadow: var(--shadow-sm) !important; }
 .table-box > .block { border: none !important; padding: 0 !important; background: transparent !important; }
 .table-box table { border-collapse: collapse !important; width: 100% !important; }
-.table-box table thead tr { background: var(--navy) !important; }
-.table-box table thead th { color: rgba(255,255,255,0.85) !important; font-weight: 500 !important; font-size: 11.5px !important; padding: 11px 14px !important; border: none !important; letter-spacing: 0.03em !important; white-space: nowrap !important; }
+/* 헤더 행 */
+.table-box table thead tr,
+.table-box table thead,
+[data-testid="dataframe"] thead tr,
+[data-testid="dataframe"] table thead tr {
+    background: #1B3A6B !important;
+    background-color: #1B3A6B !important;
+}
+/* 헤더 셀 */
+.table-box table thead th,
+[data-testid="dataframe"] thead th,
+[data-testid="dataframe"] table thead th {
+    background: #1B3A6B !important;
+    background-color: #1B3A6B !important;
+    color: #FFFFFF !important;
+    font-weight: 500 !important;
+    font-size: 11.5px !important;
+    padding: 11px 14px !important;
+    border: none !important;
+    letter-spacing: 0.03em !important;
+    white-space: nowrap !important;
+}
+/* 헤더 셀 내부 래퍼 */
+.table-box table thead th > *,
+.table-box table thead th span,
+.table-box table thead th div,
+[data-testid="dataframe"] thead th > *,
+[data-testid="dataframe"] thead th span,
+[data-testid="dataframe"] thead th div {
+    background: #1B3A6B !important;
+    background-color: #1B3A6B !important;
+    color: #FFFFFF !important;
+}
 .table-box table tbody tr td { font-size: 12.5px !important; color: var(--text) !important; padding: 9px 14px !important; background: #EEF2FA !important; border-bottom: 1px solid var(--border-light) !important; border-right: none !important; border-left: none !important; border-top: none !important; }
 .table-box table tbody tr:last-child td { border-bottom: none !important; }
 .table-box table tbody tr:hover td { background: #D8E2F0 !important; transition: background 0.12s !important; }
