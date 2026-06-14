@@ -602,7 +602,7 @@ button.secondary:hover {
     outline: none !important;
 }
 
-/* ── 전송 버튼 (원형, 항상 보임) ── */
+/* ── 전송 버튼 ── */
 #chat-send-btn,
 #chat-send-btn > .block,
 #chat-send-btn > div {
@@ -612,16 +612,19 @@ button.secondary:hover {
     box-shadow: none !important;
     flex: 0 0 54px !important;
     max-width: 54px !important;
-    min-width: 46px !important;
+    min-width: 54px !important;
+    display: flex !important;
+    align-items: stretch !important;
 }
 #chat-send-btn button {
-    background: #EEF2FA !important;
-    color: var(--navy) !important;
-    border: 1.5px solid var(--border) !important;
-    border-radius: 50% !important;
-    width: 46px !important;
+    background: var(--navy-light) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 50px !important;
+    width: 54px !important;
     height: 46px !important;
-    min-width: 46px !important;
+    min-width: 54px !important;
+    min-height: 46px !important;
     padding: 0 !important;
     font-size: 19px !important;
     display: flex !important;
@@ -631,8 +634,8 @@ button.secondary:hover {
     transition: background 0.15s, transform 0.1s !important;
     cursor: pointer !important;
 }
-#chat-send-btn button:hover { background: var(--navy) !important; transform: scale(1.06) !important; }
-#chat-send-btn button:active { transform: scale(0.97) !important; }
+#chat-send-btn button:hover { background: var(--navy) !important; transform: translateY(-1px) !important; }
+#chat-send-btn button:active { transform: translateY(0) !important; }
 
 /* ── 데이터프레임 배경 ── */
 .table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; box-shadow: var(--shadow-sm) !important; }
