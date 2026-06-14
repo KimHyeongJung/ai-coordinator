@@ -13,6 +13,7 @@ HuggingFace Space는 컨테이너 재시작 시 로컬 파일이 초기화되므
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
 
 from supabase import Client, create_client
@@ -82,6 +83,29 @@ def add_item(item_dict: dict) -> dict:
     except Exception as e:
         logger.error("add_item 실패: %s", e)
         return item_dict
+
+
+def upload_image(src_path: str, filename: str) -> str | None:
+    """
+    이미지를 Supabase Storage 'wardrobe-images' 버킷에 업로드하고 공개 URL을 반환한다.
+    버킷이 없거나 업로드 실패 시 None 반환.
+    사전 준비: Supabase 대시보드 → Storage → 'wardrobe-images' 버킷 생성 (Public)
+    """
+    try:
+        mime_type = mimetypes.guess_type(src_path)[0] or "image/jpeg"
+        with open(src_path, "rb") as f:
+            data = f.read()
+        client = get_client()
+        client.storage.from_("wardrobe-images").upload(
+            path=filename,
+            file=data,
+            file_options={"content-type": mime_type, "upsert": "true"},
+        )
+        url = client.storage.from_("wardrobe-images").get_public_url(filename)
+        return url
+    except Exception as e:
+        logger.error("upload_image 실패: %s", e)
+        return None
 
 
 def delete_item(item_id: str) -> None:

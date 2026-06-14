@@ -11,6 +11,7 @@ from __future__ import annotations
 import io
 import logging
 import os
+import uuid
 
 import torch
 from langchain_core.output_parsers import JsonOutputParser
@@ -204,6 +205,16 @@ def analyze_and_save(
 
         info = extract_clothing_info(caption)
 
+        # 이미지 Supabase Storage 업로드
+        uploaded_image_url = None
+        if image_path:
+            try:
+                ext = os.path.splitext(image_path)[1] or ".jpg"
+                filename = f"{uuid.uuid4().hex}{ext}"
+                uploaded_image_url = storage.upload_image(image_path, filename)
+            except Exception as e:
+                logger.warning("이미지 업로드 실패 (계속 진행): %s", e)
+
         item = {
             "category": info.get("category", "기타"),
             "name": info.get("name", "알 수 없는 의류"),
@@ -215,7 +226,7 @@ def analyze_and_save(
             "size": size.strip() if size else None,
             "price": price.strip() if price else None,
             "purchase_date": purchase_date.strip() if purchase_date else None,
-            "image_path": None,
+            "image_path": uploaded_image_url,
         }
 
         saved = storage.add_item(item)

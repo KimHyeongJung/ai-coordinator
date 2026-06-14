@@ -934,13 +934,17 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 with gr.Accordion("✏️ 선택 항목 수정 / 삭제", open=False) as wardrobe_edit_acc:
                     gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
                     with gr.Row():
-                        edit_w_name = gr.Textbox(label="이름", interactive=True)
-                        edit_w_category = gr.Dropdown(
-                            choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
-                            label="카테고리", interactive=True,
+                        item_image_display = gr.HTML(
+                            value='<div style="width:100%;height:160px;background:#EEF2FA;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#9BAAC4;font-size:12px">사진 없음</div>'
                         )
-                        edit_w_color = gr.Textbox(label="색상", interactive=True)
-                        edit_w_size = gr.Textbox(label="사이즈", interactive=True)
+                        with gr.Column():
+                            edit_w_name = gr.Textbox(label="이름", interactive=True)
+                            edit_w_category = gr.Dropdown(
+                                choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
+                                label="카테고리", interactive=True,
+                            )
+                            edit_w_color = gr.Textbox(label="색상", interactive=True)
+                            edit_w_size = gr.Textbox(label="사이즈", interactive=True)
                     with gr.Row():
                         save_edit_w_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
                         delete_w_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
@@ -1090,13 +1094,26 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     )
 
     # 옷장 — 행 선택 → 편집 폼 채우기
+    def _make_image_html(url: str | None) -> str:
+        if url:
+            return (
+                f'<img src="{url}" style="width:100%;height:160px;'
+                f'object-fit:cover;border-radius:10px;display:block" />'
+            )
+        return (
+            '<div style="width:100%;height:160px;background:#EEF2FA;border-radius:10px;'
+            'display:flex;align-items:center;justify-content:center;'
+            'color:#9BAAC4;font-size:12px">사진 없음</div>'
+        )
+
     def _on_wardrobe_select(evt: gr.SelectData, items):
         row = evt.index[0]
         if not items or row < 0 or row >= len(items):
-            return -1, "", "기타", "", "", gr.update(open=True)
+            return -1, _make_image_html(None), "", "기타", "", "", gr.update(open=True)
         item = items[row]
         return (
             row,
+            _make_image_html(item.get("image_path")),
             item.get("name", ""),
             item.get("category", "기타"),
             item.get("color", ""),
@@ -1107,7 +1124,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     wardrobe_df.select(
         fn=_on_wardrobe_select,
         inputs=[wardrobe_items_state],
-        outputs=[selected_wardrobe_idx, edit_w_name, edit_w_category, edit_w_color, edit_w_size, wardrobe_edit_acc],
+        outputs=[selected_wardrobe_idx, item_image_display, edit_w_name, edit_w_category, edit_w_color, edit_w_size, wardrobe_edit_acc],
     )
 
     # 옷장 — 수정 저장
