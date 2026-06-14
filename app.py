@@ -808,8 +808,8 @@ button.secondary:hover {
 /* 우측 서비스 패널 */
 #right-service {
     background: var(--surface) !important;
-    height: auto !important;
-    overflow: visible !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
 }
 #right-service > .block { background: transparent !important; border: none !important; padding: 0 !important; height: auto !important; }
 
