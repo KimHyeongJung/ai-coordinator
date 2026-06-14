@@ -781,30 +781,33 @@ button.secondary:hover {
 /* ── 2단 레이아웃 ── */
 #main-layout {
     gap: 0 !important;
-    align-items: flex-start !important;
-    min-height: 100vh !important;
+    align-items: stretch !important;
 }
-#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; height: auto !important; }
+#main-layout > .block { padding: 0 !important; border: none !important; background: transparent !important; height: 100% !important; }
 
-/* 좌측 가이드 패널 */
+/* 좌측 가이드 패널 — 컬럼 자체는 콘텐츠 높이에 맞게 늘어남 */
 #left-guide {
     border-right: 1px solid #D8E2F0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+}
+#left-guide > .block { background: transparent !important; border: none !important; padding: 0 !important; height: 100% !important; }
+#left-guide .block { background: transparent !important; border: none !important; }
+
+/* #usage-guide 만 sticky — 컬럼 안에서 뷰포트에 고정되다가 컬럼 끝에서 자연스럽게 멈춤 */
+#usage-guide {
     position: sticky !important;
     top: 0 !important;
     height: 100vh !important;
     overflow-y: auto !important;
-    flex-shrink: 0 !important;
-    align-self: flex-start !important;
 }
-#left-guide > .block { background: transparent !important; border: none !important; padding: 0 !important; height: auto !important; }
-#left-guide .block { background: transparent !important; border: none !important; }
 
 /* 우측 서비스 패널 */
 #right-service {
     background: var(--surface) !important;
     height: auto !important;
     overflow: visible !important;
-    align-self: flex-start !important;
 }
 #right-service > .block { background: transparent !important; border: none !important; padding: 0 !important; height: auto !important; }
 
@@ -818,7 +821,6 @@ button.secondary:hover {
     padding: 28px 20px 24px;
     color: #1A2540;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
-    min-height: 100vh;
     box-sizing: border-box;
 }
 .guide-logo {
