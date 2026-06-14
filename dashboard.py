@@ -32,11 +32,12 @@ def get_stats() -> dict:
     }
 
 
-def get_wardrobe_table() -> list[list]:
+def get_wardrobe_table(items=None) -> list[list]:
     """옷장 아이템을 gr.Dataframe 출력용 2D 리스트로 변환.
     컬럼: 이름 / 카테고리 / 색상 / 사진 / 계절 / 사이즈 / 등록일
     """
-    items = storage.load_wardrobe().get("items", [])
+    if items is None:
+        items = storage.load_wardrobe().get("items", [])
     rows = []
     for item in items:
         season = ", ".join(item.get("season") or [])
@@ -55,14 +56,17 @@ def get_wardrobe_table() -> list[list]:
     return rows
 
 
-def get_outfit_table() -> list[list]:
+def get_outfit_table(outfits=None, wardrobe_items=None) -> list[list]:
     """코디 목록을 gr.Dataframe 출력용 2D 리스트로 변환.
     컬럼: 코디명 / 상황 / 계절 / 태그 / 착용 의류 / AI생성 / 생성일
     """
-    outfits = storage.load_outfits().get("outfits", [])
+    if outfits is None:
+        outfits = storage.load_outfits().get("outfits", [])
+    if wardrobe_items is None:
+        wardrobe_items = storage.load_wardrobe().get("items", [])
     wardrobe_map = {
         item["id"]: item.get("name", item.get("id", ""))
-        for item in storage.load_wardrobe().get("items", [])
+        for item in wardrobe_items
     }
     rows = []
     for outfit in outfits:

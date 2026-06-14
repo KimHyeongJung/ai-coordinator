@@ -92,6 +92,36 @@ def delete_item(item_id: str) -> None:
         logger.error("delete_item 실패: %s", e)
 
 
+def update_item(item_id: str, update_dict: dict) -> dict:
+    """의류 아이템을 DB에서 업데이트하고 결과 행을 반환한다."""
+    try:
+        data = {k: v for k, v in update_dict.items() if k not in ("id", "created_at")}
+        res = get_client().table("wardrobe_items").update(data).eq("id", item_id).execute()
+        return res.data[0] if res.data else update_dict
+    except Exception as e:
+        logger.error("update_item 실패: %s", e)
+        return update_dict
+
+
+def delete_outfit(outfit_id: str) -> None:
+    """특정 코디를 DB에서 삭제한다."""
+    try:
+        get_client().table("outfits").delete().eq("id", outfit_id).execute()
+    except Exception as e:
+        logger.error("delete_outfit 실패: %s", e)
+
+
+def update_outfit(outfit_id: str, update_dict: dict) -> dict:
+    """코디를 DB에서 업데이트하고 결과 행을 반환한다."""
+    try:
+        data = {k: v for k, v in update_dict.items() if k not in ("id", "created_at")}
+        res = get_client().table("outfits").update(data).eq("id", outfit_id).execute()
+        return res.data[0] if res.data else update_dict
+    except Exception as e:
+        logger.error("update_outfit 실패: %s", e)
+        return update_dict
+
+
 def add_outfit(outfit_dict: dict) -> dict:
     """
     코디를 DB에 삽입하고 생성된 행을 반환한다.

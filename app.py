@@ -39,6 +39,7 @@ from dotenv import load_dotenv  # noqa: E402
 import daily_look  # noqa: E402
 import dashboard   # noqa: E402
 import outfit      # noqa: E402
+import storage     # noqa: E402
 import wardrobe    # noqa: E402
 
 load_dotenv()
@@ -302,6 +303,17 @@ button.secondary:hover {
     background: var(--navy-pale) !important;
     border-color: var(--navy) !important;
     color: var(--navy) !important;
+}
+.btn-danger button {
+    background: #DC2626 !important;
+    color: #FFFFFF !important;
+    border-color: #B91C1C !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+.btn-danger button:hover {
+    background: #B91C1C !important;
 }
 
 /* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
@@ -909,9 +921,25 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     label=None,
                     elem_classes=["table-box"],
                 )
+                wardrobe_items_state = gr.State([])
+                selected_wardrobe_idx = gr.State(-1)
                 refresh_wardrobe_btn = gr.Button(
                     "목록 새로고침", elem_classes=["btn-secondary"]
                 )
+                with gr.Accordion("✏️ 선택 항목 수정 / 삭제", open=False) as wardrobe_edit_acc:
+                    gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
+                    with gr.Row():
+                        edit_w_name = gr.Textbox(label="이름", interactive=True)
+                        edit_w_category = gr.Dropdown(
+                            choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
+                            label="카테고리", interactive=True,
+                        )
+                        edit_w_color = gr.Textbox(label="색상", interactive=True)
+                        edit_w_size = gr.Textbox(label="사이즈", interactive=True)
+                    with gr.Row():
+                        save_edit_w_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
+                        delete_w_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
+                    edit_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
         # ── 탭 1: 코디 ────────────────────────────────────────────────────
         with gr.Tab("코디"):
@@ -949,6 +977,26 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     label=None,
                     elem_classes=["table-box"],
                 )
+                outfit_items_state = gr.State([])
+                selected_outfit_idx = gr.State(-1)
+                with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
+                    gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
+                    with gr.Row():
+                        edit_o_name = gr.Textbox(label="코디명", interactive=True)
+                        edit_o_situation = gr.Dropdown(
+                            choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
+                            label="상황", interactive=True,
+                        )
+                    with gr.Row():
+                        edit_o_season = gr.Dropdown(
+                            choices=["봄", "여름", "가을", "겨울", "사계절"],
+                            label="계절", interactive=True,
+                        )
+                        edit_o_tags = gr.Textbox(label="태그 (쉼표로 구분)", interactive=True)
+                    with gr.Row():
+                        save_edit_o_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
+                        delete_o_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
+                    edit_o_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
         # ── 탭 2: 대시보드 ────────────────────────────────────────────────
         with gr.Tab("대시보드"):
@@ -1015,22 +1063,141 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     # ── 이벤트 연결 ──────────────────────────────────────────────────────────
 
-    # 옷장
+    # 옷장 — 업로드/추가
+    def _analyze_and_save(image, desc, size, price, date):
+        result_msg, table = wardrobe.analyze_and_save(image, desc, size, price, date)
+        items = storage.load_wardrobe().get("items", [])
+        return result_msg, table, items
+
     upload_btn.click(
-        fn=wardrobe.analyze_and_save,
+        fn=_analyze_and_save,
         inputs=[image_input, description_input, size_input, price_input, date_input],
-        outputs=[upload_result, wardrobe_df],
-    )
-    refresh_wardrobe_btn.click(
-        fn=dashboard.get_wardrobe_table,
-        outputs=wardrobe_df,
+        outputs=[upload_result, wardrobe_df, wardrobe_items_state],
     )
 
-    # 코디
+    def _refresh_wardrobe():
+        items = storage.load_wardrobe().get("items", [])
+        return dashboard.get_wardrobe_table(items), items
+
+    refresh_wardrobe_btn.click(
+        fn=_refresh_wardrobe,
+        outputs=[wardrobe_df, wardrobe_items_state],
+    )
+
+    # 옷장 — 행 선택 → 편집 폼 채우기
+    def _on_wardrobe_select(evt: gr.SelectData, items):
+        row = evt.index[0]
+        if not items or row < 0 or row >= len(items):
+            return -1, "", "기타", "", "", gr.update(open=True)
+        item = items[row]
+        return (
+            row,
+            item.get("name", ""),
+            item.get("category", "기타"),
+            item.get("color", ""),
+            item.get("size") or "",
+            gr.update(open=True),
+        )
+
+    wardrobe_df.select(
+        fn=_on_wardrobe_select,
+        inputs=[wardrobe_items_state],
+        outputs=[selected_wardrobe_idx, edit_w_name, edit_w_category, edit_w_color, edit_w_size, wardrobe_edit_acc],
+    )
+
+    # 옷장 — 수정 저장
+    def _update_wardrobe(sel_idx, items, name, category, color, size):
+        if sel_idx < 0 or not items or sel_idx >= len(items):
+            return "수정할 항목을 먼저 선택해주세요.", [], []
+        item = items[sel_idx]
+        storage.update_item(item["id"], {"name": name, "category": category, "color": color, "size": size})
+        new_items = storage.load_wardrobe().get("items", [])
+        return f"✅ '{name}' 수정 완료", dashboard.get_wardrobe_table(new_items), new_items
+
+    save_edit_w_btn.click(
+        fn=_update_wardrobe,
+        inputs=[selected_wardrobe_idx, wardrobe_items_state, edit_w_name, edit_w_category, edit_w_color, edit_w_size],
+        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state],
+    )
+
+    # 옷장 — 삭제
+    def _delete_wardrobe(sel_idx, items):
+        if sel_idx < 0 or not items or sel_idx >= len(items):
+            return "삭제할 항목을 먼저 선택해주세요.", [], []
+        item = items[sel_idx]
+        storage.delete_item(item["id"])
+        new_items = storage.load_wardrobe().get("items", [])
+        return f"✅ '{item.get('name', '')}' 삭제 완료", dashboard.get_wardrobe_table(new_items), new_items
+
+    delete_w_btn.click(
+        fn=_delete_wardrobe,
+        inputs=[selected_wardrobe_idx, wardrobe_items_state],
+        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state],
+    )
+
+    # 코디 — 생성
+    def _generate_outfit(situation, season):
+        msg, table = outfit.generate_outfit_ui(situation, season)
+        outfit_items = storage.load_outfits().get("outfits", [])
+        return msg, table, outfit_items
+
     gen_btn.click(
-        fn=outfit.generate_outfit_ui,
+        fn=_generate_outfit,
         inputs=[situation_input, season_input],
-        outputs=[outfit_result, outfit_df],
+        outputs=[outfit_result, outfit_df, outfit_items_state],
+    )
+
+    # 코디 — 행 선택 → 편집 폼 채우기
+    def _on_outfit_select(evt: gr.SelectData, items):
+        row = evt.index[0]
+        if not items or row < 0 or row >= len(items):
+            return -1, "", "캐주얼", "봄", "", gr.update(open=True)
+        item = items[row]
+        tags_str = ", ".join(item.get("tags") or [])
+        return (
+            row,
+            item.get("name", ""),
+            item.get("situation", "캐주얼"),
+            item.get("season", "봄"),
+            tags_str,
+            gr.update(open=True),
+        )
+
+    outfit_df.select(
+        fn=_on_outfit_select,
+        inputs=[outfit_items_state],
+        outputs=[selected_outfit_idx, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags, outfit_edit_acc],
+    )
+
+    # 코디 — 수정 저장
+    def _update_outfit(sel_idx, items, name, situation, season, tags_str):
+        if sel_idx < 0 or not items or sel_idx >= len(items):
+            return "수정할 항목을 먼저 선택해주세요.", [], []
+        item = items[sel_idx]
+        tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+        storage.update_outfit(item["id"], {"name": name, "situation": situation, "season": season, "tags": tags})
+        new_items = storage.load_outfits().get("outfits", [])
+        return f"✅ '{name}' 수정 완료", dashboard.get_outfit_table(new_items), new_items
+
+    save_edit_o_btn.click(
+        fn=_update_outfit,
+        inputs=[selected_outfit_idx, outfit_items_state, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags],
+        outputs=[edit_o_result, outfit_df, outfit_items_state],
+    )
+
+    # 코디 — 삭제
+    def _delete_outfit(sel_idx, items):
+        if sel_idx < 0 or not items or sel_idx >= len(items):
+            return "삭제할 항목을 먼저 선택해주세요.", [], []
+        item = items[sel_idx]
+        storage.delete_outfit(item["id"])
+        new_items = storage.load_outfits().get("outfits", [])
+        return f"✅ '{item.get('name', '')}' 삭제 완료", dashboard.get_outfit_table(new_items), new_items
+
+    delete_o_btn.click(
+        fn=_delete_outfit,
+        inputs=[selected_outfit_idx, outfit_items_state],
+        outputs=[edit_o_result, outfit_df, outfit_items_state],
     )
 
     # 대시보드
@@ -1061,12 +1228,14 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     # 앱 로드 시 초기 데이터
     def _initial_load():
-        wardrobe_table = dashboard.get_wardrobe_table()
-        outfit_table = dashboard.get_outfit_table()
+        w_items = storage.load_wardrobe().get("items", [])
+        o_items = storage.load_outfits().get("outfits", [])
         stats = dashboard.get_stats()
         return (
-            wardrobe_table,
-            outfit_table,
+            dashboard.get_wardrobe_table(w_items),
+            w_items,
+            dashboard.get_outfit_table(o_items, w_items),
+            o_items,
             daily_look.get_weather_html(),
             daily_look.get_initial_chat(),
             stats["total_items"],
@@ -1078,7 +1247,9 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         fn=_initial_load,
         outputs=[
             wardrobe_df,
+            wardrobe_items_state,
             outfit_df,
+            outfit_items_state,
             weather_html,
             chatbot,
             total_items_num,
