@@ -740,34 +740,64 @@ SIDEBAR_HTML = """
 </style>
 
 <script>
-/* 사이드바 → 탭 전환
-   gr.Tabs가 생성한 [role="tab"] 버튼을 찾아 클릭.
-   Gradio는 display:none 탭 버튼도 click() 이벤트를 처리함. */
-function sbGo(idx, attempt) {
-    attempt = attempt || 0;
+/* ── 사이드바 ↔ Gradio Tabs 연동 모듈 ── */
+(function () {
+    var _tabBtns = null;   // Gradio tab 버튼 캐시
+    var NUM_TABS  = 4;
 
-    /* 사이드바 active 상태 업데이트 */
-    for (var i = 0; i < 4; i++) {
-        var el = document.getElementById('sb-' + i);
-        if (el) el.classList.toggle('active', i === idx);
+    /* Gradio가 렌더링한 [role="tab"] 버튼 목록 반환.
+       캐시가 유효하면 재사용, 아니면 DOM 탐색. */
+    function findTabBtns() {
+        if (_tabBtns && _tabBtns.length === NUM_TABS) return _tabBtns;
+
+        var sel = [
+            '#content-tabs [role="tab"]',
+            '#content-tabs .tab-nav button',
+            '[role="tab"]'
+        ];
+        for (var s = 0; s < sel.length; s++) {
+            var found = document.querySelectorAll(sel[s]);
+            if (found.length === NUM_TABS) {
+                _tabBtns = found;
+                return _tabBtns;
+            }
+        }
+        return null;
     }
 
-    /* Gradio Tabs 버튼 탐색 (여러 선택자 시도) */
-    var btns = document.querySelectorAll('#content-tabs [role="tab"]');
-    if (!btns || !btns.length) {
-        btns = document.querySelectorAll('#content-tabs .tab-nav button');
-    }
-    if (!btns || !btns.length) {
-        btns = document.querySelectorAll('[role="tab"]');
+    /* 사이드바 active 클래스 동기화 */
+    function syncSidebar(idx) {
+        for (var i = 0; i < NUM_TABS; i++) {
+            var el = document.getElementById('sb-' + i);
+            if (el) el.classList.toggle('active', i === idx);
+        }
     }
 
-    if (btns && btns.length > idx) {
-        btns[idx].click();
-    } else if (attempt < 10) {
-        /* Gradio 렌더링 완료 전이면 재시도 */
-        setTimeout(function() { sbGo(idx, attempt + 1); }, 150);
-    }
-}
+    /* 사이드바 메뉴 클릭 → 탭 전환 (전역 노출) */
+    window.sbGo = function sbGo(idx, _retry) {
+        _retry = _retry || 0;
+        syncSidebar(idx);               // 시각 피드백은 즉시
+
+        var tabs = findTabBtns();
+        if (tabs) {
+            tabs[idx].click();          // Gradio 탭 전환 트리거
+        } else if (_retry < 20) {
+            _tabBtns = null;            // 캐시 무효화 후 재시도
+            setTimeout(function () { sbGo(idx, _retry + 1); }, 150);
+        }
+    };
+
+    /* Gradio 탭 버튼이 직접 클릭될 때 사이드바도 동기화 */
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest('[role="tab"]');
+        if (!btn) return;
+        var tabs = findTabBtns();
+        if (!tabs) return;
+        var idx = Array.from(tabs).indexOf(btn);
+        if (idx >= 0) syncSidebar(idx);
+    }, true);  /* capture 단계 — Gradio 처리보다 먼저 실행 */
+
+})();
 
 /* 이미지 업로드 텍스트 커스텀 */
 function patchUploadText() {
