@@ -304,34 +304,19 @@ button.secondary:hover {
     color: var(--navy) !important;
 }
 
-/* ── 폼 라벨 배지 ── */
-.block label,
-.block .label-wrap label,
-.block > .label-wrap > label,
-.block .label-wrap {
+/* ── 폼 라벨 배지 (span 텍스트만 타깃) ── */
+.block label > span:first-child,
+.block .label-wrap > span,
+.block .label-wrap label > span:first-child {
     background: #1B3A6B !important;
     color: #FFFFFF !important;
     font-size: 11px !important;
     font-weight: 500 !important;
     padding: 3px 9px !important;
     border-radius: 5px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    border: none !important;
-    box-shadow: none !important;
-    width: auto !important;
+    display: inline-block !important;
     margin-bottom: 4px !important;
-}
-.block label span,
-.block label > span,
-.block label > span:first-child,
-.block .label-wrap span,
-.block .label-wrap label span {
-    color: #FFFFFF !important;
-    font-size: 11px !important;
-    font-weight: 500 !important;
-    background: transparent !important;
-    padding: 0 !important;
+    line-height: 1.4 !important;
 }
 
 /* ── 입력 필드 배경 #EEF2FA ── */
