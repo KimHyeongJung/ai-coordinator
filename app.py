@@ -593,22 +593,6 @@ TOP_NAV_HTML = """
     </div>
   </div>
 
-  <!-- 메뉴 버튼 -->
-  <div style="display:flex;align-items:center;gap:4px">
-    <button class="tn-btn active" id="tn-0" onclick="navGo(0)">
-      <i class="ti ti-hanger"></i><span>옷장</span>
-    </button>
-    <button class="tn-btn" id="tn-1" onclick="navGo(1)">
-      <i class="ti ti-layout-grid"></i><span>코디</span>
-    </button>
-    <button class="tn-btn" id="tn-2" onclick="navGo(2)">
-      <i class="ti ti-chart-pie"></i><span>대시보드</span>
-    </button>
-    <button class="tn-btn" id="tn-3" onclick="navGo(3)">
-      <i class="ti ti-wand"></i><span>데일리룩</span>
-    </button>
-  </div>
-
   <!-- 우측 배지 -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
     <span style="background:#EEF2FA;color:#4A6FA5;font-size:10.5px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid #D8E2F0">Florence-2 · Qwen2.5</span>
