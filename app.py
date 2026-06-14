@@ -304,13 +304,34 @@ button.secondary:hover {
     color: var(--navy) !important;
 }
 
-/* ── 폼 라벨 ── */
-.block label > span:first-child,
-.block .label-wrap span {
-    font-size: 11.5px !important;
-    color: var(--text-muted) !important;
+/* ── 폼 라벨 배지 ── */
+.block label,
+.block .label-wrap label,
+.block > .label-wrap > label,
+.block .label-wrap {
+    background: #1B3A6B !important;
+    color: #FFFFFF !important;
+    font-size: 11px !important;
     font-weight: 500 !important;
-    letter-spacing: 0.01em !important;
+    padding: 3px 9px !important;
+    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    margin-bottom: 4px !important;
+}
+.block label span,
+.block label > span,
+.block label > span:first-child,
+.block .label-wrap span,
+.block .label-wrap label span {
+    color: #FFFFFF !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    background: transparent !important;
+    padding: 0 !important;
 }
 
 /* ── 입력 필드 배경 #EEF2FA ── */
