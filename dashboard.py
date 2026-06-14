@@ -57,21 +57,65 @@ def get_wardrobe_table() -> list[list]:
 
 def get_outfit_table() -> list[list]:
     """코디 목록을 gr.Dataframe 출력용 2D 리스트로 변환.
-    컬럼: 코디명 / 상황 / 계절 / 태그 / AI생성 / 생성일
+    컬럼: 코디명 / 상황 / 계절 / 태그 / 착용 의류 / AI생성 / 생성일
     """
     outfits = storage.load_outfits().get("outfits", [])
+    wardrobe_map = {
+        item["id"]: item.get("name", item.get("id", ""))
+        for item in storage.load_wardrobe().get("items", [])
+    }
     rows = []
     for outfit in outfits:
         tags = ", ".join(outfit.get("tags") or [])
         date = (outfit.get("created_at") or "")[:10]
+        item_names = ", ".join(
+            wardrobe_map.get(iid, iid) for iid in (outfit.get("item_ids") or [])
+        )
         rows.append(
             [
                 outfit.get("name", ""),
                 outfit.get("situation", ""),
                 outfit.get("season", ""),
                 tags,
+                item_names,
                 "✓" if outfit.get("ai_generated") else "✗",
                 date,
             ]
         )
     return rows
+
+
+def build_stats_cards(stats: dict) -> str:
+    """카테고리별 통계를 플랫 카드 HTML로 변환."""
+    by_category = stats.get("by_category", {})
+    by_season = stats.get("by_season", {})
+    by_situation = stats.get("by_situation", {})
+
+    def section(title: str, icon: str, data: dict) -> str:
+        if not data:
+            return (
+                f'<div class="sc-section">'
+                f'<div class="sc-title">{icon} {title}</div>'
+                f'<p style="font-size:12px;color:#9BAAC4;margin:0">데이터 없음</p>'
+                f'</div>'
+            )
+        cards = "".join(
+            f'<div class="sc-card">'
+            f'<span class="sc-label">{k}</span>'
+            f'<span class="sc-val">{v}</span>'
+            f'</div>'
+            for k, v in sorted(data.items(), key=lambda x: -x[1])
+        )
+        return (
+            f'<div class="sc-section">'
+            f'<div class="sc-title">{icon} {title}</div>'
+            f'<div class="sc-grid">{cards}</div>'
+            f'</div>'
+        )
+
+    html = (
+        section("카테고리별", "👔", by_category)
+        + section("계절별", "🌸", by_season)
+        + section("상황별", "💼", by_situation)
+    )
+    return f'<div class="sc-wrap">{html}</div>'
