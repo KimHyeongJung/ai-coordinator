@@ -45,9 +45,9 @@ OUTFIT_SYSTEM_PROMPT = """
 {{"name": str, "item_ids": [str], "tags": [str], "reason": str}}
 
 [필수 구성 규칙]
-1. 상의: 반드시 1개 선택
-2. 하의: 반드시 1개 선택
-3. 신발: 반드시 1개 선택
+1. 상의: 반드시 1개만 선택, 복수 선택하면 안됨
+2. 하의: 반드시 1개만 선택, 복수 선택하면 안됨
+3. 신발: 반드시 1개만 선택, 복수 선택하면 안됨
 4. 아우터: {outer_rule}
 5. 악세서리·가방: 절대 선택 금지 — 코디 구성에서 완전 제외
 
@@ -61,7 +61,7 @@ OUTFIT_SYSTEM_PROMPT = """
 - item_ids: 위 규칙에 따라 선택한 아이템 id 배열 (최소 3개)
 - tags: 코디 태그 배열 (예: ["캐주얼", "봄", "데일리"])
 - reason: 이 코디를 선택한 이유 (한국어 2~3문장)
-- name: 코디명 (상황+계절+스타일 반영, 예: "봄 오피스 미니멀")
+- name: 코디명 — 반드시 "[계절] [상황] [스타일키워드]" 형식으로 작성. 예: "봄 회사 미니멀", "겨울 데이트 클래식", "여름 운동 스포티". 아래 기존 코디명과 절대 중복 금지: {existing_names}
 
 언어 규칙: 모든 텍스트는 반드시 한국어로만 작성. 영어·한자(漢字·中文) 사용 절대 금지.
 """
@@ -210,6 +210,16 @@ def _validate_and_fix(
     return result
 
 
+def _make_unique_name(name: str, existing: set[str]) -> str:
+    """이미 존재하는 코디명이면 숫자 접미사를 붙여 고유하게 만든다."""
+    if name not in existing:
+        return name
+    i = 2
+    while f"{name} {i}" in existing:
+        i += 1
+    return f"{name} {i}"
+
+
 def generate_outfit(situation: str, season: str) -> dict:
     """옷장 아이템을 조합해 코디 JSON을 생성한다."""
     wardrobe = storage.load_wardrobe()
@@ -260,6 +270,13 @@ def generate_outfit(situation: str, season: str) -> dict:
     outer_rule = _build_outer_rule(season)
     color_rule = _SITUATION_COLOR_GUIDE.get(situation, _SITUATION_COLOR_GUIDE["기타"])
 
+    existing_outfit_names: set[str] = {
+        o.get("name", "") for o in storage.load_outfits().get("outfits", [])
+    }
+    existing_names_str = (
+        "、".join(f'"{n}"' for n in existing_outfit_names if n) or "없음"
+    )
+
     chain = _chain_lazy()
     try:
         result = chain.invoke(
@@ -269,10 +286,16 @@ def generate_outfit(situation: str, season: str) -> dict:
                 "outer_rule": outer_rule,
                 "allowed_styles": allowed_styles,
                 "color_rule": color_rule,
+                "existing_names": existing_names_str,
                 "wardrobe_json": json.dumps(wardrobe_summary, ensure_ascii=False),
             }
         )
         result = _validate_and_fix(result, groups, season_groups, situation, season)
+
+        # LLM이 중복 이름을 반환했을 경우 후처리로 고유 이름 보장
+        raw_name = result.get("name") or f"{season} {situation} 코디"
+        result["name"] = _make_unique_name(raw_name, existing_outfit_names)
+
         return result
     except Exception as e:
         logger.error("generate_outfit 실패: %s", e)
