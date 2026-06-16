@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+from collections import Counter
 
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -27,12 +28,10 @@ _SITUATION_STYLES: dict[str, set[str]] = {
     "기타":   {"클래식", "스포티", "포멀", "캐주얼", "미니멀"},
 }
 
-# 운동 상황에 스포티 아이템이 없을 때 허용할 폴백 스타일
-_SPORTY_FALLBACK = {"캐주얼"}
-
 # ── 상황별 색상 지침 (LLM 프롬프트 삽입용) ────────────────────────────────────
 _SITUATION_COLOR_GUIDE: dict[str, str] = {
     "회사":   "차분한 색상 계열(네이비, 그레이, 베이지, 브라운, 블랙, 화이트 등) 우선 선택",
+    "운동":   "모든 색상 허용 — 색상 제한 없이 자유 선택",
     "데이트": "모든 색상 허용 — 상황에 어울리는 색상 자유 선택",
     "경조사": "블랙 계열 필수. 상의(셔츠)는 화이트도 허용. 화려하거나 밝은 색상(빨강·노랑·형광 등) 절대 금지",
     "기타":   "상황에 어울리는 색상 자유 선택",
@@ -50,9 +49,14 @@ OUTFIT_SYSTEM_PROMPT = """
 4. 아우터: {outer_rule}
 5. 악세서리·가방: 절대 선택 금지 — 코디 구성에서 완전 제외
 
-[스타일 규칙]
+[스타일 통일 규칙] (절대 우선)
+상의·하의·신발·아우터는 반드시 하나의 스타일로 통일해야 한다.
+먼저 코디의 대표 스타일 1개를 결정하고, 모든 아이템을 그 스타일에서만 선택할 것.
+예: 클래식으로 결정 → 상의·하의·신발·아우터 전부 클래식 아이템만 선택.
+
+[허용 스타일]
 허용 스타일: {allowed_styles}
-위 스타일에 해당하는 의류만 선택할 것. 스타일 정보가 없는 아이템은 선택 가능.
+위 스타일 중 하나를 대표 스타일로 정하고 해당 스타일 아이템으로만 코디를 구성할 것. 스타일 정보가 없는 아이템은 선택 가능.
 
 [색상 규칙]
 {color_rule}
@@ -126,15 +130,6 @@ def _filter_by_style(items: list, situation: str) -> list:
     """상황에 허용된 스타일의 의류만 반환. 스타일 정보 없는 아이템은 항상 포함."""
     allowed = _SITUATION_STYLES.get(situation, _SITUATION_STYLES["기타"])
 
-    # 운동 상황: 스포티 아이템이 없으면 캐주얼 폴백 허용
-    if situation == "운동":
-        has_sporty = any(
-            any(s in allowed for s in (it.get("style") or []))
-            for it in items
-        )
-        if not has_sporty:
-            allowed = allowed | _SPORTY_FALLBACK
-
     matched = []
     for item in items:
         item_styles = item.get("style") or []
@@ -157,6 +152,21 @@ def _pick_fallback(groups: dict, category: str, used_ids: set) -> str | None:
     if not candidates:
         return None
     return random.choice(candidates)["id"]
+
+
+_STYLE_CATS = {"상의", "하의", "신발", "아우터"}
+
+
+def _parse_styles(item: dict) -> list[str]:
+    """아이템 style 필드를 항상 list[str]로 반환."""
+    styles = item.get("style") or []
+    if isinstance(styles, str):
+        try:
+            parsed = json.loads(styles)
+            styles = parsed if isinstance(parsed, list) else [parsed]
+        except (json.JSONDecodeError, ValueError):
+            styles = [s.strip() for s in styles.split(",") if s.strip()]
+    return styles
 
 
 def _validate_and_fix(
@@ -183,6 +193,19 @@ def _validate_and_fix(
         if iid in all_items and all_items[iid].get("category") not in excluded_cats
     ]
 
+    # 상의/하의/신발/아우터 카테고리별 1개 초과 시 첫 번째만 유지
+    single_cats = {"상의", "하의", "신발", "아우터"}
+    seen_cats: set[str] = set()
+    deduped: list[str] = []
+    for iid in selected_ids:
+        cat = all_items[iid].get("category") if iid in all_items else None
+        if cat in single_cats:
+            if cat in seen_cats:
+                continue
+            seen_cats.add(cat)
+        deduped.append(iid)
+    selected_ids = deduped
+
     selected_cats = {all_items[iid]["category"] for iid in selected_ids if iid in all_items}
     used_ids = set(selected_ids)
 
@@ -204,6 +227,47 @@ def _validate_and_fix(
         if candidates:
             fid = random.choice(candidates)["id"]
             selected_ids.append(fid)
+
+    # 스타일 통일: 선택된 의류 중 지배 스타일을 찾아 불일치 아이템 교체 시도
+    style_counter: Counter = Counter()
+    for iid in selected_ids:
+        it = all_items.get(iid)
+        if it and it.get("category") in _STYLE_CATS:
+            for s in _parse_styles(it):
+                style_counter[s] += 1
+
+    if style_counter:
+        dominant = style_counter.most_common(1)[0][0]
+        unified: list[str] = []
+        used_in_unify: set[str] = set()
+        for iid in selected_ids:
+            it = all_items.get(iid)
+            if not it:
+                unified.append(iid)
+                continue
+            cat = it.get("category", "")
+            if cat not in _STYLE_CATS:
+                unified.append(iid)
+                continue
+            item_styles = _parse_styles(it)
+            if not item_styles or dominant in item_styles:
+                unified.append(iid)
+                used_in_unify.add(iid)
+            else:
+                # 같은 카테고리에서 dominant 스타일을 가진 대체 아이템 탐색
+                alternatives = [
+                    c for c in groups.get(cat, [])
+                    if c["id"] not in used_in_unify
+                    and (not _parse_styles(c) or dominant in _parse_styles(c))
+                ]
+                if alternatives:
+                    replacement = random.choice(alternatives)
+                    unified.append(replacement["id"])
+                    used_in_unify.add(replacement["id"])
+                else:
+                    unified.append(iid)
+                    used_in_unify.add(iid)
+        selected_ids = unified
 
     result["item_ids"] = selected_ids
     return result

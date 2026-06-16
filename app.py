@@ -1220,10 +1220,10 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 selected_wardrobe_idx = gr.State(-1)
                 with gr.Row(elem_classes=["page-nav-row"]):
                     w_prev_btn = gr.Button("◀ 이전", elem_classes=["btn-secondary"], scale=1, min_width=70)
-                    w_page_label = gr.HTML(
-                        '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
-                        scale=4,
-                    )
+                    with gr.Column(scale=4):
+                        w_page_label = gr.HTML(
+                            '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
+                        )
                     w_next_btn = gr.Button("다음 ▶", elem_classes=["btn-secondary"], scale=1, min_width=70)
                 refresh_wardrobe_btn = gr.Button(
                     "목록 새로고침", elem_classes=["btn-secondary"]
@@ -1313,10 +1313,10 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 selected_outfit_idx = gr.State(-1)
                 with gr.Row(elem_classes=["page-nav-row"]):
                     o_prev_btn = gr.Button("◀ 이전", elem_classes=["btn-secondary"], scale=1, min_width=70)
-                    o_page_label = gr.HTML(
-                        '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
-                        scale=4,
-                    )
+                    with gr.Column(scale=4):
+                        o_page_label = gr.HTML(
+                            '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
+                        )
                     o_next_btn = gr.Button("다음 ▶", elem_classes=["btn-secondary"], scale=1, min_width=70)
                 with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
                     gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
