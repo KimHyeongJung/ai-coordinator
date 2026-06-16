@@ -287,11 +287,11 @@ def get_weather_display() -> str:
 def recommend_daily_look(
     user_message: str,
     chat_history: list,
-) -> tuple[list, str]:
+) -> tuple[list, str, str | None]:
     """
     날씨 + 옷장 정보를 컨텍스트로 LLM 채팅 응답 생성.
     Gradio Chatbot(type="messages") 콜백용.
-    반환: (업데이트된 chat_history, 입력창 초기화 문자열)
+    반환: (업데이트된 chat_history, 입력창 초기화 문자열, 추천된 첫 번째 코디명 또는 None)
     """
     weather = get_weather()
     items = storage.load_wardrobe().get("items", [])
@@ -362,15 +362,17 @@ def recommend_daily_look(
         ai_text = f"죄송합니다, 응답 생성에 실패했습니다: {str(e)[:100]}"
 
     # 후처리: 저장된 코디가 있는데 응답에 코디명이 하나도 언급되지 않으면 보완
+    first_recommended: str | None = None
     if saved_outfit_names:
         mentioned = [name for name in saved_outfit_names if name in ai_text]
         if not mentioned:
-            # 응답 하단에 실제 저장된 코디명 목록을 추가
             names_bold = " / ".join(f"**{n}**" for n in saved_outfit_names[:10])
             ai_text += f"\n\n💡 저장된 코디 목록: {names_bold}"
+            mentioned = saved_outfit_names[:10]
+        first_recommended = mentioned[0] if mentioned else None
 
     updated_history = chat_history + [
         {"role": "user", "content": user_message},
         {"role": "assistant", "content": ai_text},
     ]
-    return updated_history, ""
+    return updated_history, "", first_recommended

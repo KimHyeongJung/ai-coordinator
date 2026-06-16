@@ -1271,9 +1271,6 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         bulk_deselect_all_w_btn = gr.Button("전체 해제", elem_classes=["btn-secondary"])
                     bulk_delete_w_btn = gr.Button("🗑️ 선택 항목 일괄 삭제", elem_classes=["btn-danger"])
                     bulk_delete_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
-                gr.HTML('<div class="section-header">악세서리·가방 갤러리</div>')
-                acc_bag_gallery_html = gr.HTML(value="<div style='color:#9BAAC4;font-size:13px;padding:8px 0'>갤러리를 새로고침하면 등록된 악세서리·가방 사진을 확인할 수 있습니다.</div>")
-                refresh_acc_btn = gr.Button("갤러리 새로고침", elem_classes=["btn-secondary"])
 
         # ── 탭 1: 코디 ────────────────────────────────────────────────────
         with gr.Tab("코디"):
@@ -1426,6 +1423,10 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     elem_classes=["daily-outfit-select"],
                 )
                 daily_outfit_gallery = gr.HTML(value="")
+                gr.HTML('<div class="section-header">악세서리·가방 갤러리</div>')
+                gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 8px">챗봇이 추천한 악세서리·가방을 여기서 사진으로 확인하세요.</p>')
+                acc_bag_gallery_html = gr.HTML(value="<div style='color:#9BAAC4;font-size:13px;padding:8px 0'>등록된 악세서리·가방이 없습니다.</div>")
+                refresh_acc_btn = gr.Button("갤러리 새로고침", elem_classes=["btn-secondary"])
 
     # ── 이벤트 연결 ──────────────────────────────────────────────────────────
 
@@ -1506,22 +1507,22 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         result_msg, _ = wardrobe.analyze_and_save(image, desc, size, price, date)
         items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(items, 0)
-        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[]), _build_acc_bag_gallery(items)
+        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
 
     upload_btn.click(
         fn=_analyze_and_save,
         inputs=[image_input, description_input, size_input, price_input, date_input],
-        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, acc_bag_gallery_html],
+        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
     )
 
     def _refresh_wardrobe():
         items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(items, 0)
-        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[]), _build_acc_bag_gallery(items)
+        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
 
     refresh_wardrobe_btn.click(
         fn=_refresh_wardrobe,
-        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, acc_bag_gallery_html],
+        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
     )
 
     refresh_acc_btn.click(
@@ -1920,15 +1921,29 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     )
 
     # 데일리룩
+    def _chatbot_callback(user_msg, history, wardrobe_items):
+        """챗봇 응답 후 추천 코디명을 드롭다운에 자동 선택하고 갤러리를 표시한다."""
+        history_out, empty_in, first_outfit = daily_look.recommend_daily_look(user_msg, history)
+        outfit_update = gr.update()
+        gallery_html = ""
+        if first_outfit:
+            outfit_update = gr.update(value=first_outfit)
+            outfits_data = storage.load_outfits().get("outfits", [])
+            target = next((o for o in outfits_data if o.get("name") == first_outfit), None)
+            if target:
+                wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
+                gallery_html = _make_outfit_gallery_html(target.get("item_ids") or [], wardrobe_map)
+        return history_out, empty_in, outfit_update, gallery_html
+
     chat_btn.click(
-        fn=daily_look.recommend_daily_look,
-        inputs=[chat_input, chatbot],
-        outputs=[chatbot, chat_input],
+        fn=_chatbot_callback,
+        inputs=[chat_input, chatbot, wardrobe_items_state],
+        outputs=[chatbot, chat_input, daily_outfit_select, daily_outfit_gallery],
     )
     chat_input.submit(
-        fn=daily_look.recommend_daily_look,
-        inputs=[chat_input, chatbot],
-        outputs=[chatbot, chat_input],
+        fn=_chatbot_callback,
+        inputs=[chat_input, chatbot, wardrobe_items_state],
+        outputs=[chatbot, chat_input, daily_outfit_select, daily_outfit_gallery],
     )
     clear_btn.click(
         fn=lambda: ([], ""),
