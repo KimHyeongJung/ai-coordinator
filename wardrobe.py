@@ -8,9 +8,9 @@ requests 방식 대신 로컬 추론을 사용한다.
 
 from __future__ import annotations
 
-import io
 import logging
 import os
+import re
 import uuid
 
 import torch
@@ -53,7 +53,7 @@ color: 한국어 색상명
 style: 클래식/스포티/포멀/캐주얼/미니멀 중 해당하는 것 배열 (복수 가능)
 season: 봄/여름/가을/겨울 중 해당하는 것 배열
 wash_instruction: 한국어 세탁법 한 줄
-모든 값 한국어만. 영어·한자 금지."""
+모든 값 한국어만. 영어·한자 절대 금지."""
 
 _clothing_chain = None
 
@@ -139,6 +139,22 @@ def extract_clothing_info(caption: str) -> dict:
         }
 
 
+# 한글·숫자·기본 기호 외 문자(영어·한자·외래문자 등) 제거 패턴
+_NON_KOREAN_PATTERN = re.compile(
+    r'[^가-힣ᄀ-ᇿ㄰-㆏\s\d℃°%·,./\-()\[\]~]'
+)
+
+
+def _sanitize_korean(text: str, fallback: str = "") -> str:
+    """LLM 출력 텍스트에서 한글·숫자·기본 기호 외 문자를 제거한다.
+    결과가 너무 짧으면 fallback 반환.
+    """
+    if not text:
+        return fallback
+    cleaned = _NON_KOREAN_PATTERN.sub("", str(text)).strip()
+    return cleaned if len(cleaned) >= 2 else fallback
+
+
 _VALID_CATEGORIES = {"상의", "하의", "아우터", "신발", "가방", "악세서리", "기타"}
 
 # LLM이 영어나 비표준 값을 반환할 때 매핑
@@ -201,6 +217,22 @@ def _normalize_style(raw) -> list[str]:
             if mapped:
                 result.append(mapped)
     return result if result else ["캐주얼"]
+
+
+_VALID_SEASONS = {"봄", "여름", "가을", "겨울"}
+
+
+def _normalize_season(raw) -> list[str]:
+    """LLM 또는 Gradio에서 넘어온 계절 값을 항상 유효한 리스트로 변환."""
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return [s for s in raw if str(s).strip() in _VALID_SEASONS]
+    if isinstance(raw, str):
+        # "봄, 여름" 또는 "봄/여름" 형식 모두 처리
+        parts = re.split(r"[,/]", raw)
+        return [s.strip() for s in parts if s.strip() in _VALID_SEASONS]
+    return []
 
 
 def _load_image_from_path(image_path: str) -> Image.Image:
@@ -280,12 +312,11 @@ def analyze_and_save(
 
         item = {
             "category": _normalize_category(info.get("category")),
-            "name": info.get("name", "알 수 없는 의류"),
-            "color": info.get("color", ""),
-            "material": info.get("material", ""),
+            "name": _sanitize_korean(info.get("name", ""), "알 수 없는 의류"),
+            "color": _sanitize_korean(info.get("color", ""), ""),
             "style": _normalize_style(info.get("style")),
-            "season": info.get("season", []),
-            "wash_instruction": info.get("wash_instruction", ""),
+            "season": _normalize_season(info.get("season")),
+            "wash_instruction": _sanitize_korean(info.get("wash_instruction", ""), "라벨 확인"),
             "size": size.strip() if size else None,
             "price": price.strip() if price else None,
             "purchase_date": purchase_date.strip() if purchase_date else None,

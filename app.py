@@ -1499,7 +1499,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             "category": category,
             "color": color,
             "style": style,
-            "season": season if isinstance(season, list) else [],
+            "season": wardrobe._normalize_season(season),
             "price": price or None,
             "purchase_date": purchase_date or None,
             "wash_instruction": wash,
