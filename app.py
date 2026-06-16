@@ -1241,6 +1241,9 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         label="삭제할 의류 선택 (복수 선택 가능)",
                         interactive=True,
                     )
+                    with gr.Row():
+                        bulk_select_all_w_btn = gr.Button("전체 선택", elem_classes=["btn-secondary"])
+                        bulk_deselect_all_w_btn = gr.Button("전체 해제", elem_classes=["btn-secondary"])
                     bulk_delete_w_btn = gr.Button("🗑️ 선택 항목 일괄 삭제", elem_classes=["btn-danger"])
                     bulk_delete_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
@@ -1258,11 +1261,11 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 gr.HTML('<div class="section-header">AI 코디 생성</div>')
                 with gr.Row():
                     situation_input = gr.Dropdown(
-                        choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
-                        label="상황", value="캐주얼",
+                        choices=["회사", "데이트", "운동", "경조사", "여행", "기타"],
+                        label="상황", value="회사",
                     )
                     season_input = gr.Dropdown(
-                        choices=["봄", "여름", "가을", "겨울", "사계절"],
+                        choices=["봄", "여름", "가을", "겨울"],
                         label="계절", value="봄",
                     )
                     gen_btn = gr.Button(
@@ -1290,12 +1293,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     )
                     edit_o_name = gr.Textbox(label="코디명", interactive=True)
                     edit_o_situation = gr.CheckboxGroup(
-                        choices=["회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"],
+                        choices=["회사", "데이트", "운동", "경조사", "여행", "기타"],
                         label="상황", interactive=True,
                         elem_id="edit-o-situation",
                     )
                     edit_o_season = gr.CheckboxGroup(
-                        choices=["봄", "여름", "가을", "겨울", "사계절"],
+                        choices=["봄", "여름", "가을", "겨울"],
                         label="계절", interactive=True,
                         elem_id="edit-o-season",
                     )
@@ -1311,6 +1314,9 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         label="삭제할 코디 선택 (복수 선택 가능)",
                         interactive=True,
                     )
+                    with gr.Row():
+                        bulk_select_all_o_btn = gr.Button("전체 선택", elem_classes=["btn-secondary"])
+                        bulk_deselect_all_o_btn = gr.Button("전체 해제", elem_classes=["btn-secondary"])
                     bulk_delete_o_btn = gr.Button("🗑️ 선택 항목 일괄 삭제", elem_classes=["btn-danger"])
                     bulk_delete_o_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
@@ -1724,6 +1730,15 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         inputs=[bulk_w_select, wardrobe_items_state],
         outputs=[bulk_delete_w_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
     )
+    bulk_select_all_w_btn.click(
+        fn=lambda items: gr.update(value=[v for _, v in _w_choices(items)]),
+        inputs=[wardrobe_items_state],
+        outputs=[bulk_w_select],
+    )
+    bulk_deselect_all_w_btn.click(
+        fn=lambda: gr.update(value=[]),
+        outputs=[bulk_w_select],
+    )
 
     # 코디 — 일괄 삭제
     def _bulk_delete_outfit(selected_ids, items):
@@ -1747,6 +1762,15 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         fn=_bulk_delete_outfit,
         inputs=[bulk_o_select, outfit_items_state],
         outputs=[bulk_delete_o_result, outfit_df, outfit_items_state, bulk_o_select, daily_outfit_select],
+    )
+    bulk_select_all_o_btn.click(
+        fn=lambda items: gr.update(value=[v for _, v in _o_choices(items)]),
+        inputs=[outfit_items_state],
+        outputs=[bulk_o_select],
+    )
+    bulk_deselect_all_o_btn.click(
+        fn=lambda: gr.update(value=[]),
+        outputs=[bulk_o_select],
     )
 
     # 대시보드

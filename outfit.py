@@ -48,7 +48,7 @@ OUTFIT_SYSTEM_PROMPT = """
 - reason: 이 코디를 선택한 이유, 어떤 카테고리를 왜 포함했는지 설명 (한국어 2~3문장)
 - name: 코디명 (상황+계절+스타일 반영, 예: "봄 오피스 스마트캐주얼")
 
-언어 규칙: 모든 텍스트는 반드시 한국어 또는 영어로만 작성. 한자(漢字·中文) 사용 절대 금지.
+언어 규칙: 모든 텍스트는 반드시 한국어로만 작성. 영어·한자(漢字·中文) 사용 절대 금지. name·tags·reason 모든 필드를 한국어로만 출력할 것.
 """
 
 _outfit_chain = None
@@ -244,8 +244,8 @@ def generate_outfit(situation: str, season: str) -> dict:
         }
 
 
-_VALID_SITUATIONS = {"회사", "데이트", "운동", "경조사", "캐주얼", "여행", "기타"}
-_VALID_SEASONS = {"봄", "여름", "가을", "겨울", "사계절"}
+_VALID_SITUATIONS = {"회사", "데이트", "운동", "경조사", "여행", "기타"}
+_VALID_SEASONS = {"봄", "여름", "가을", "겨울"}
 
 
 def generate_outfit_ui(situation: str, season: str) -> tuple[str, list]:
@@ -256,7 +256,7 @@ def generate_outfit_ui(situation: str, season: str) -> tuple[str, list]:
     result = generate_outfit(situation, season)
 
     saved_situation = situation if situation in _VALID_SITUATIONS else "기타"
-    saved_season = season if season in _VALID_SEASONS else "사계절"
+    saved_season = season if season in _VALID_SEASONS else "봄"
 
     if result.get("item_ids"):
         outfit_name = result.get("name") or f"{saved_situation} 코디"
