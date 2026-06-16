@@ -45,21 +45,15 @@ def _load_florence():
         logger.info("Florence-2 모델 로드 완료")
     return _florence_model, _florence_processor
 
-CLOTHING_SYSTEM_PROMPT = """
-너는 패션 전문가 AI다. 영어로 된 의류 이미지 캡션을 분석해 의류 정보를 JSON으로 추출해라.
-반드시 아래 JSON 형식만 출력하고, 다른 텍스트/마크다운/코드블록 금지.
-{{"category": str, "name": str, "color": str, "material": str,
- "style": [str], "season": [str], "wash_instruction": str, "note": str}}
-- category: 반드시 아래 7개 중 정확히 하나만 출력할 것 → 상의 / 하의 / 아우터 / 신발 / 가방 / 악세서리 / 기타
-  (가방은 반드시 "가방"으로, 운동복·스포츠웨어는 "상의"/"하의"로, 그 외 분류 불명확하면 "기타")
-- name: 구체적인 한국어 의류명 (예: 화이트 오버사이즈 크롭 티셔츠)
-- style: 아래 5개 중 해당하는 것을 복수 선택해 배열로 출력 → 클래식 / 스포티 / 포멀 / 캐주얼 / 미니멀
-  (반드시 위 5개 값만 사용, 그 외 표현 금지)
-- season: 적합한 계절 배열 (봄/여름/가을/겨울 중 복수 가능)
-- material: 캡션에서 추정 불가 시 "추정 불가" 입력
-- wash_instruction: 소재 기반 세탁 방법 한 줄로 작성
-언어 규칙: 모든 텍스트 필드는 반드시 한국어로만 작성할 것. 영어·한자(漢字·中文) 사용 절대 금지. 의류명·색상·소재·스타일·세탁방법 등 모든 값을 한국어로 출력할 것.
-"""
+CLOTHING_SYSTEM_PROMPT = """패션 AI. 캡션을 분석해 아래 JSON만 출력. 다른 텍스트·코드블록 금지.
+{{"category":str,"name":str,"color":str,"style":[str],"season":[str],"wash_instruction":str}}
+category: 상의/하의/아우터/신발/가방/악세서리/기타 중 하나 (가방→"가방", 스포츠→"상의"/"하의")
+name: 한국어 의류명 (예: 네이비 슬림핏 치노 팬츠)
+color: 한국어 색상명
+style: 클래식/스포티/포멀/캐주얼/미니멀 중 해당하는 것 배열 (복수 가능)
+season: 봄/여름/가을/겨울 중 해당하는 것 배열
+wash_instruction: 한국어 세탁법 한 줄
+모든 값 한국어만. 영어·한자 금지."""
 
 _clothing_chain = None
 
@@ -71,8 +65,8 @@ def _chain_lazy():
         endpoint = HuggingFaceEndpoint(
             repo_id=LLM_MODEL,
             task="text-generation",
-            max_new_tokens=400,
-            temperature=0.2,
+            max_new_tokens=200,
+            temperature=0.1,
             huggingfacehub_api_token=get_token(),
         )
         llm = ChatHuggingFace(llm=endpoint)
@@ -96,6 +90,9 @@ def caption_clothing(image: Image.Image) -> str:
         model, processor = _load_florence()
         rgb_image = image.convert("RGB")
 
+        # 이미지 리사이즈: 비전 인코더 처리 속도 향상
+        rgb_image.thumbnail((512, 512))
+
         task = "<DETAILED_CAPTION>"
         inputs = processor(text=task, images=rgb_image, return_tensors="pt")
 
@@ -103,8 +100,9 @@ def caption_clothing(image: Image.Image) -> str:
             generated_ids = model.generate(
                 input_ids=inputs["input_ids"],
                 pixel_values=inputs["pixel_values"],
-                max_new_tokens=256,
-                num_beams=3,
+                max_new_tokens=128,
+                num_beams=1,          # greedy: 빔서치 대비 ~3배 빠름
+                do_sample=False,
             )
 
         raw = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
@@ -135,11 +133,9 @@ def extract_clothing_info(caption: str) -> dict:
             "category": "기타",
             "name": "알 수 없는 의류",
             "color": "",
-            "material": "추정 불가",
             "style": ["캐주얼"],
             "season": ["봄", "가을"],
             "wash_instruction": "라벨 확인",
-            "note": f"분석 실패: {str(e)[:100]}",
         }
 
 

@@ -1457,7 +1457,11 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         season = [s for s in season if s in _VALID_SEASON_CHOICES]
         style = item.get("style") or []
         if isinstance(style, str):
-            style = [s.strip() for s in style.split(",") if s.strip()]
+            try:
+                parsed = json.loads(style)
+                style = parsed if isinstance(parsed, list) else [parsed]
+            except (json.JSONDecodeError, ValueError):
+                style = [s.strip() for s in style.split(",") if s.strip()]
         style = [s for s in style if s in _VALID_STYLE_CHOICES]
         return (
             row,

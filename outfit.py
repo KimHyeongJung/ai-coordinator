@@ -140,7 +140,11 @@ def _filter_by_style(items: list, situation: str) -> list:
     for item in items:
         item_styles = item.get("style") or []
         if isinstance(item_styles, str):
-            item_styles = [s.strip() for s in item_styles.split(",") if s.strip()]
+            try:
+                parsed = json.loads(item_styles)
+                item_styles = parsed if isinstance(parsed, list) else [parsed]
+            except (json.JSONDecodeError, ValueError):
+                item_styles = [s.strip() for s in item_styles.split(",") if s.strip()]
         if not item_styles or any(s in allowed for s in item_styles):
             matched.append(item)
     return matched
