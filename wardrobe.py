@@ -48,10 +48,15 @@ def _load_florence():
 CLOTHING_SYSTEM_PROMPT = """패션 AI. 캡션을 분석해 아래 JSON만 출력. 다른 텍스트·코드블록 금지.
 {{"category":str,"name":str,"color":str,"style":[str],"season":[str],"wash_instruction":str}}
 category: 상의/하의/아우터/신발/가방/악세서리/기타 중 하나 (가방→"가방", 스포츠→"상의"/"하의")
-name: 한국어 의류명 (예: 네이비 슬림핏 치노 팬츠)
+name: 한국어 의류명. 상의·아우터는 소매 길이를 반드시 포함할 것.
+  소매 판단 기준 → 반팔(short sleeve·short-sleeved·half sleeve 등): "반팔" 포함
+                   긴팔(long sleeve·long-sleeved 등): "긴팔" 포함
+                   민소매(sleeveless·tank·vest 등): "민소매" 포함
+                   소매 정보 없으면 생략
+  예: "화이트 반팔 오버사이즈 티셔츠", "네이비 긴팔 셔츠", "블랙 민소매 탑"
 color: 한국어 색상명
 style: 클래식/스포티/포멀/캐주얼/미니멀 중 해당하는 것 배열 (복수 가능)
-season: 봄/여름/가을/겨울 중 해당하는 것 배열
+season: 봄/여름/가을/겨울 중 해당하는 것 배열 (반팔·민소매→여름 필수 포함, 긴팔 니트·코트→가을·겨울 필수 포함)
 wash_instruction: 한국어 세탁법 한 줄
 모든 값 한국어만. 영어·한자 절대 금지."""
 

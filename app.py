@@ -1172,8 +1172,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     )
                     with gr.Column():
                         description_input = gr.Textbox(
-                            label="비고",
-                            placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠",
+                            label="비고(이름)",
+                            placeholder="예: 네이비 체크 반소매 오버사이즈 셔츠, 기타 카테고리로 해당 이름으로 저장됩니다.",
                             lines=2,
                         )
                         size_input = gr.Textbox(
