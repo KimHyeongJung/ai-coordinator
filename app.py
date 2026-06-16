@@ -789,6 +789,10 @@ button.secondary:hover {
 .table-box table tbody tr:last-child td { border-bottom: none !important; }
 .table-box table tbody tr:hover td { background: #D8E2F0 !important; transition: background 0.12s !important; }
 
+/* ── 페이지 네비게이션 ── */
+.page-nav-row { align-items: center !important; gap: 6px !important; margin: 6px 0 2px !important; }
+.page-nav-row button { min-height: 32px !important; padding: 4px 12px !important; font-size: 12px !important; }
+
 /* ── 스크롤바 ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -1212,7 +1216,15 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     elem_classes=["table-box"],
                 )
                 wardrobe_items_state = gr.State([])
+                w_page_num = gr.State(0)
                 selected_wardrobe_idx = gr.State(-1)
+                with gr.Row(elem_classes=["page-nav-row"]):
+                    w_prev_btn = gr.Button("◀ 이전", elem_classes=["btn-secondary"], scale=1, min_width=70)
+                    w_page_label = gr.HTML(
+                        '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
+                        scale=4,
+                    )
+                    w_next_btn = gr.Button("다음 ▶", elem_classes=["btn-secondary"], scale=1, min_width=70)
                 refresh_wardrobe_btn = gr.Button(
                     "목록 새로고침", elem_classes=["btn-secondary"]
                 )
@@ -1297,7 +1309,15 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     elem_classes=["table-box"],
                 )
                 outfit_items_state = gr.State([])
+                o_page_num = gr.State(0)
                 selected_outfit_idx = gr.State(-1)
+                with gr.Row(elem_classes=["page-nav-row"]):
+                    o_prev_btn = gr.Button("◀ 이전", elem_classes=["btn-secondary"], scale=1, min_width=70)
+                    o_page_label = gr.HTML(
+                        '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
+                        scale=4,
+                    )
+                    o_next_btn = gr.Button("다음 ▶", elem_classes=["btn-secondary"], scale=1, min_width=70)
                 with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
                     gr.HTML('<p style="font-size:12px;color:#9BAAC4;margin:0 0 10px">테이블에서 행을 클릭하면 편집할 수 있습니다.</p>')
                     gr.HTML('<div style="font-size:11px;font-weight:600;color:#5A6A8A;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">착용 의류</div>')
@@ -1413,25 +1433,54 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _o_choices(outfits):
         return [(o.get("name", "이름없음"), o["id"]) for o in outfits]
 
+    # ── 페이지네이션 헬퍼 ─────────────────────────────────────────────────
+    _PER_PAGE = 10
+
+    def _page_html(page: int, total: int) -> str:
+        total_pages = max(1, (total + _PER_PAGE - 1) // _PER_PAGE)
+        return (
+            f'<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">'
+            f'<b>{page + 1}</b> / {total_pages} 페이지 &nbsp;(총 {total}개)'
+            f'</div>'
+        )
+
+    def _paged_w(items, page=0):
+        """옷장 전체 아이템 → 페이지 슬라이스 + 페이지 번호 + 레이블 HTML."""
+        rows = dashboard.get_wardrobe_table(items)
+        total = len(rows)
+        total_pages = max(1, (total + _PER_PAGE - 1) // _PER_PAGE)
+        page = max(0, min(page, total_pages - 1))
+        return rows[page * _PER_PAGE:(page + 1) * _PER_PAGE], page, _page_html(page, total)
+
+    def _paged_o(items, wardrobe_items=None, page=0):
+        """코디 전체 아이템 → 페이지 슬라이스 + 페이지 번호 + 레이블 HTML."""
+        rows = dashboard.get_outfit_table(items, wardrobe_items)
+        total = len(rows)
+        total_pages = max(1, (total + _PER_PAGE - 1) // _PER_PAGE)
+        page = max(0, min(page, total_pages - 1))
+        return rows[page * _PER_PAGE:(page + 1) * _PER_PAGE], page, _page_html(page, total)
+
     # 옷장 — 업로드/추가
     def _analyze_and_save(image, desc, size, price, date):
-        result_msg, table = wardrobe.analyze_and_save(image, desc, size, price, date)
+        result_msg, _ = wardrobe.analyze_and_save(image, desc, size, price, date)
         items = storage.load_wardrobe().get("items", [])
-        return result_msg, table, items, gr.update(choices=_w_choices(items), value=[])
+        paged, pg, lbl = _paged_w(items, 0)
+        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
 
     upload_btn.click(
         fn=_analyze_and_save,
         inputs=[image_input, description_input, size_input, price_input, date_input],
-        outputs=[upload_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
+        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
     )
 
     def _refresh_wardrobe():
         items = storage.load_wardrobe().get("items", [])
-        return dashboard.get_wardrobe_table(items), items, gr.update(choices=_w_choices(items), value=[])
+        paged, pg, lbl = _paged_w(items, 0)
+        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
 
     refresh_wardrobe_btn.click(
         fn=_refresh_wardrobe,
-        outputs=[wardrobe_df, wardrobe_items_state, bulk_w_select],
+        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
     )
 
     # 옷장 — 행 선택 → 편집 폼 채우기
@@ -1454,12 +1503,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         s = str(raw).strip() if raw else "기타"
         return s if s in _VALID_W_CATEGORIES else "기타"
 
-    def _on_wardrobe_select(evt: gr.SelectData, items):
-        row = evt.index[0]
+    def _on_wardrobe_select(evt: gr.SelectData, items, page):
+        page_row = evt.index[0]
+        actual_idx = page * _PER_PAGE + page_row
         empty = (-1, _make_image_html(None), "", "기타", "", "", [], "", "", "", "", gr.update(open=True))
-        if not items or row < 0 or row >= len(items):
+        if not items or actual_idx < 0 or actual_idx >= len(items):
             return empty
-        item = items[row]
+        item = items[actual_idx]
         _VALID_SEASON_CHOICES = {"봄", "여름", "가을", "겨울"}
         _VALID_STYLE_CHOICES = {"클래식", "스포티", "포멀", "캐주얼", "미니멀"}
         season = item.get("season") or []
@@ -1475,7 +1525,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 style = [s.strip() for s in style.split(",") if s.strip()]
         style = [s for s in style if s in _VALID_STYLE_CHOICES]
         return (
-            row,
+            actual_idx,
             _make_image_html(item.get("image_path")),
             item.get("name", ""),
             _safe_category(item.get("category")),
@@ -1491,7 +1541,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     wardrobe_df.select(
         fn=_on_wardrobe_select,
-        inputs=[wardrobe_items_state],
+        inputs=[wardrobe_items_state, w_page_num],
         outputs=[
             selected_wardrobe_idx, item_image_display,
             edit_w_name, edit_w_category, edit_w_color, edit_w_style,
@@ -1503,7 +1553,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     # 옷장 — 수정 저장
     def _update_wardrobe(sel_idx, items, name, category, color, style, season, price, purchase_date, wash, size):
         if sel_idx < 0 or not items or sel_idx >= len(items):
-            return "수정할 항목을 먼저 선택해주세요.", [], [], gr.update()
+            return "수정할 항목을 먼저 선택해주세요.", gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
         item = items[sel_idx]
         storage.update_item(item["id"], {
             "name": name,
@@ -1517,10 +1567,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             "size": size or None,
         })
         new_items = storage.load_wardrobe().get("items", [])
+        paged, pg, lbl = _paged_w(new_items, 0)
         return (
             f"✅ '{name}' 수정 완료",
-            dashboard.get_wardrobe_table(new_items),
+            paged,
             new_items,
+            pg,
+            lbl,
             gr.update(choices=_w_choices(new_items), value=[]),
         )
 
@@ -1532,7 +1585,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             edit_w_season, edit_w_price, edit_w_purchase_date, edit_w_wash,
             edit_w_size,
         ],
-        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
+        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
     )
 
     # 옷장 — 삭제
@@ -1545,17 +1598,20 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _delete_wardrobe(sel_idx, items):
         if sel_idx < 0 or not items or sel_idx >= len(items):
             return ("삭제할 항목을 먼저 선택해주세요.",
-                    gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(open=False), gr.update())
         item = items[sel_idx]
         storage.delete_item(item["id"])
         new_items = storage.load_wardrobe().get("items", [])
+        paged, pg, lbl = _paged_w(new_items, 0)
         return (
             f"✅ '{item.get('name', '')}' 삭제 완료",
-            dashboard.get_wardrobe_table(new_items),
+            paged,
             new_items,
+            pg,
+            lbl,
             -1,
             _EMPTY_IMAGE_HTML,
             "", "기타", "", "", [], "", "", "", "",
@@ -1568,6 +1624,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         inputs=[selected_wardrobe_idx, wardrobe_items_state],
         outputs=[
             edit_w_result, wardrobe_df, wardrobe_items_state,
+            w_page_num, w_page_label,
             selected_wardrobe_idx, item_image_display,
             edit_w_name, edit_w_category, edit_w_color, edit_w_style,
             edit_w_season, edit_w_price, edit_w_purchase_date,
@@ -1578,11 +1635,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     # 코디 — 생성
     def _generate_outfit(situation, season):
-        msg, table = outfit.generate_outfit_ui(situation, season)
+        msg, _ = outfit.generate_outfit_ui(situation, season)
         outfit_items = storage.load_outfits().get("outfits", [])
         outfit_names = [o.get("name", "") for o in outfit_items if o.get("name")]
+        paged, pg, lbl = _paged_o(outfit_items, page=0)
         return (
-            msg, table, outfit_items,
+            msg, paged, outfit_items, pg, lbl,
             gr.update(choices=outfit_names, value=None),
             gr.update(choices=_o_choices(outfit_items), value=[]),
         )
@@ -1590,7 +1648,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     gen_btn.click(
         fn=_generate_outfit,
         inputs=[situation_input, season_input],
-        outputs=[outfit_result, outfit_df, outfit_items_state, daily_outfit_select, bulk_o_select],
+        outputs=[outfit_result, outfit_df, outfit_items_state, o_page_num, o_page_label, daily_outfit_select, bulk_o_select],
     )
 
     # 코디 — 착용 의류 갤러리 HTML 생성 헬퍼
@@ -1630,12 +1688,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         )
 
     # 코디 — 행 선택 → 편집 폼 채우기
-    def _on_outfit_select(evt: gr.SelectData, items, wardrobe_items):
-        row = evt.index[0]
+    def _on_outfit_select(evt: gr.SelectData, items, wardrobe_items, page):
+        page_row = evt.index[0]
+        actual_idx = page * _PER_PAGE + page_row
         empty_gallery = '<div style="color:#9BAAC4;font-size:12px;padding:8px 0">코디를 선택하면 착용 의류 사진이 표시됩니다.</div>'
-        if not items or row < 0 or row >= len(items):
+        if not items or actual_idx < 0 or actual_idx >= len(items):
             return -1, empty_gallery, "", [], [], "", gr.update(open=True)
-        item = items[row]
+        item = items[actual_idx]
         tags_str = ", ".join(item.get("tags") or [])
         wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
         gallery_html = _make_outfit_items_html(item.get("item_ids") or [], wardrobe_map)
@@ -1657,7 +1716,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         season = _to_list(item.get("season"))
 
         return (
-            row,
+            actual_idx,
             gallery_html,
             item.get("name", ""),
             situation,
@@ -1668,7 +1727,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     outfit_df.select(
         fn=_on_outfit_select,
-        inputs=[outfit_items_state, wardrobe_items_state],
+        inputs=[outfit_items_state, wardrobe_items_state, o_page_num],
         outputs=[selected_outfit_idx, outfit_items_gallery, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags, outfit_edit_acc],
     )
 
@@ -1688,12 +1747,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         # 갤러리 재생성 (item_ids 불변, wardrobe 업데이트 반영)
         wardrobe_map = {w["id"]: w for w in (wardrobe_items or [])}
         gallery_html = _make_outfit_items_html(item.get("item_ids") or [], wardrobe_map)
-        return f"✅ '{name}' 수정 완료", dashboard.get_outfit_table(new_items), new_items, gallery_html
+        paged, pg, lbl = _paged_o(new_items, page=0)
+        return f"✅ '{name}' 수정 완료", paged, new_items, pg, lbl, gallery_html
 
     save_edit_o_btn.click(
         fn=_update_outfit,
         inputs=[selected_outfit_idx, outfit_items_state, wardrobe_items_state, edit_o_name, edit_o_situation, edit_o_season, edit_o_tags],
-        outputs=[edit_o_result, outfit_df, outfit_items_state, outfit_items_gallery],
+        outputs=[edit_o_result, outfit_df, outfit_items_state, o_page_num, o_page_label, outfit_items_gallery],
     )
 
     # 코디 — 삭제
@@ -1705,17 +1765,20 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _delete_outfit(sel_idx, items):
         if sel_idx < 0 or not items or sel_idx >= len(items):
             return ("삭제할 항목을 먼저 선택해주세요.",
-                    gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(open=False), gr.update(), gr.update())
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(open=False), gr.update(), gr.update())
         item = items[sel_idx]
         storage.delete_outfit(item["id"])
         new_items = storage.load_outfits().get("outfits", [])
         outfit_names = [o.get("name", "") for o in new_items if o.get("name")]
+        paged, pg, lbl = _paged_o(new_items, page=0)
         return (
             f"✅ '{item.get('name', '')}' 삭제 완료",
-            dashboard.get_outfit_table(new_items),
+            paged,
             new_items,
+            pg,
+            lbl,
             -1,
             _EMPTY_GALLERY_HTML,
             "", [], [], "",
@@ -1729,6 +1792,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         inputs=[selected_outfit_idx, outfit_items_state],
         outputs=[
             edit_o_result, outfit_df, outfit_items_state,
+            o_page_num, o_page_label,
             selected_outfit_idx, outfit_items_gallery,
             edit_o_name, edit_o_situation, edit_o_season, edit_o_tags,
             outfit_edit_acc,
@@ -1739,18 +1803,19 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     # 옷장 — 일괄 삭제
     def _bulk_delete_wardrobe(selected_ids, items):
         if not selected_ids:
-            return "삭제할 항목을 선택해주세요.", gr.update(), gr.update(), gr.update()
+            return "삭제할 항목을 선택해주세요.", gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
         names = [next((it.get("name","") for it in items if it["id"] == iid), "") for iid in selected_ids]
         for iid in selected_ids:
             storage.delete_item(iid)
         new_items = storage.load_wardrobe().get("items", [])
+        paged, pg, lbl = _paged_w(new_items, 0)
         msg = f"✅ {len(selected_ids)}개 삭제 완료: {', '.join(n for n in names if n)}"
-        return msg, dashboard.get_wardrobe_table(new_items), new_items, gr.update(choices=_w_choices(new_items), value=[])
+        return msg, paged, new_items, pg, lbl, gr.update(choices=_w_choices(new_items), value=[])
 
     bulk_delete_w_btn.click(
         fn=_bulk_delete_wardrobe,
         inputs=[bulk_w_select, wardrobe_items_state],
-        outputs=[bulk_delete_w_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
+        outputs=[bulk_delete_w_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
     )
     bulk_select_all_w_btn.click(
         fn=lambda items: gr.update(value=[v for _, v in _w_choices(items)]),
@@ -1765,17 +1830,20 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     # 코디 — 일괄 삭제
     def _bulk_delete_outfit(selected_ids, items):
         if not selected_ids:
-            return "삭제할 항목을 선택해주세요.", gr.update(), gr.update(), gr.update(), gr.update()
+            return "삭제할 항목을 선택해주세요.", gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
         names = [next((it.get("name","") for it in items if it["id"] == iid), "") for iid in selected_ids]
         for iid in selected_ids:
             storage.delete_outfit(iid)
         new_items = storage.load_outfits().get("outfits", [])
         outfit_names = [o.get("name", "") for o in new_items if o.get("name")]
+        paged, pg, lbl = _paged_o(new_items, page=0)
         msg = f"✅ {len(selected_ids)}개 삭제 완료: {', '.join(n for n in names if n)}"
         return (
             msg,
-            dashboard.get_outfit_table(new_items),
+            paged,
             new_items,
+            pg,
+            lbl,
             gr.update(choices=_o_choices(new_items), value=[]),
             gr.update(choices=outfit_names, value=None),
         )
@@ -1783,7 +1851,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     bulk_delete_o_btn.click(
         fn=_bulk_delete_outfit,
         inputs=[bulk_o_select, outfit_items_state],
-        outputs=[bulk_delete_o_result, outfit_df, outfit_items_state, bulk_o_select, daily_outfit_select],
+        outputs=[bulk_delete_o_result, outfit_df, outfit_items_state, o_page_num, o_page_label, bulk_o_select, daily_outfit_select],
     )
     bulk_select_all_o_btn.click(
         fn=lambda items: gr.update(value=[v for _, v in _o_choices(items)]),
@@ -1838,17 +1906,51 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         outputs=[daily_outfit_gallery],
     )
 
+    # 옷장 — 페이지 이동
+    def _w_prev(page, items):
+        rows, pg, lbl = _paged_w(items, page - 1)
+        return rows, pg, lbl
+
+    def _w_next(page, items):
+        rows, pg, lbl = _paged_w(items, page + 1)
+        return rows, pg, lbl
+
+    w_prev_btn.click(fn=_w_prev, inputs=[w_page_num, wardrobe_items_state],
+                     outputs=[wardrobe_df, w_page_num, w_page_label])
+    w_next_btn.click(fn=_w_next, inputs=[w_page_num, wardrobe_items_state],
+                     outputs=[wardrobe_df, w_page_num, w_page_label])
+
+    # 코디 — 페이지 이동
+    def _o_prev(page, items):
+        rows, pg, lbl = _paged_o(items, page=page - 1)
+        return rows, pg, lbl
+
+    def _o_next(page, items):
+        rows, pg, lbl = _paged_o(items, page=page + 1)
+        return rows, pg, lbl
+
+    o_prev_btn.click(fn=_o_prev, inputs=[o_page_num, outfit_items_state],
+                     outputs=[outfit_df, o_page_num, o_page_label])
+    o_next_btn.click(fn=_o_next, inputs=[o_page_num, outfit_items_state],
+                     outputs=[outfit_df, o_page_num, o_page_label])
+
     # 앱 로드 시 초기 데이터
     def _initial_load():
         w_items = storage.load_wardrobe().get("items", [])
         o_items = storage.load_outfits().get("outfits", [])
         stats = dashboard.get_stats()
         outfit_names = [o.get("name", "") for o in o_items if o.get("name")]
+        w_paged, w_pg, w_lbl = _paged_w(w_items, 0)
+        o_paged, o_pg, o_lbl = _paged_o(o_items, w_items, 0)
         return (
-            dashboard.get_wardrobe_table(w_items),
+            w_paged,
             w_items,
-            dashboard.get_outfit_table(o_items, w_items),
+            w_pg,
+            w_lbl,
+            o_paged,
             o_items,
+            o_pg,
+            o_lbl,
             daily_look.get_weather_html(),
             daily_look.get_initial_chat(),
             stats["total_items"],
@@ -1864,8 +1966,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         outputs=[
             wardrobe_df,
             wardrobe_items_state,
+            w_page_num,
+            w_page_label,
             outfit_df,
             outfit_items_state,
+            o_page_num,
+            o_page_label,
             weather_html,
             chatbot,
             total_items_num,
