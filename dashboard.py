@@ -24,11 +24,24 @@ def get_stats() -> dict:
 
     by_situation = dict(Counter(o.get("situation", "기타") for o in outfit_list))
 
+    by_style: Counter = Counter()
+    for item in items:
+        styles = item.get("style") or []
+        if isinstance(styles, str):
+            try:
+                parsed = json.loads(styles)
+                styles = parsed if isinstance(parsed, list) else [parsed]
+            except (json.JSONDecodeError, ValueError):
+                styles = [s.strip() for s in styles.split(",") if s.strip()]
+        for style in styles:
+            by_style[style] += 1
+
     return {
         "total_items": len(items),
         "total_outfits": len(outfit_list),
         "by_category": by_category,
         "by_season": dict(by_season),
+        "by_style": dict(by_style),
         "by_situation": by_situation,
     }
 
@@ -118,6 +131,7 @@ def build_stats_cards(stats: dict) -> str:
     """카테고리별 통계를 플랫 카드 HTML로 변환."""
     by_category = stats.get("by_category", {})
     by_season = stats.get("by_season", {})
+    by_style = stats.get("by_style", {})
     by_situation = stats.get("by_situation", {})
 
     def section(title: str, icon: str, data: dict) -> str:
@@ -145,6 +159,7 @@ def build_stats_cards(stats: dict) -> str:
     html = (
         section("카테고리별", "👔", by_category)
         + section("계절별", "🌸", by_season)
+        + section("스타일별", "🎨", by_style)
         + section("상황별", "💼", by_situation)
     )
     return f'<div class="sc-wrap">{html}</div>'
