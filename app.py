@@ -719,7 +719,7 @@ button.secondary:hover {
 #chat-send-btn button:active { transform: translateY(0) !important; }
 
 /* ── 데이터프레임 배경 ── */
-.table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; box-shadow: var(--shadow-sm) !important; }
+.table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: clip !important; box-shadow: var(--shadow-sm) !important; }
 .table-box > .block { border: none !important; padding: 0 !important; background: transparent !important; }
 .table-box table { border-collapse: collapse !important; width: 100% !important; }
 /* 헤더 행 */
@@ -1195,6 +1195,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     headers=["이름", "카테고리", "색상", "스타일", "계절", "가격", "구매시기", "세탁방법"],
                     label=None,
                     elem_classes=["table-box"],
+                    height=700,
                 )
                 wardrobe_items_state = gr.State([])
                 selected_wardrobe_idx = gr.State(-1)
@@ -1275,6 +1276,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     headers=["코디명", "상황", "계절", "태그", "착용 의류", "AI생성", "생성일"],
                     label=None,
                     elem_classes=["table-box"],
+                    height=700,
                 )
                 outfit_items_state = gr.State([])
                 selected_outfit_idx = gr.State(-1)
@@ -1437,9 +1439,11 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         if not items or row < 0 or row >= len(items):
             return empty
         item = items[row]
+        _VALID_SEASON_CHOICES = {"봄", "여름", "가을", "겨울"}
         season = item.get("season") or []
         if isinstance(season, str):
             season = [s.strip() for s in season.split(",") if s.strip()]
+        season = [s for s in season if s in _VALID_SEASON_CHOICES]
         return (
             row,
             _make_image_html(item.get("image_path")),
