@@ -1114,7 +1114,7 @@ def _build_wardrobe_gallery_html(items: list) -> str:
     # CSS (active 탭 하이라이트 + 해당 패널 표시)
     active_labels = "\n".join(
         f'#wgal-r-{cat}:checked ~ .wgal-tabs label[for="wgal-r-{cat}"]'
-        f' {{ background:#4A6FA5;color:#fff;font-weight:600; }}'
+        f' {{ background:#4A6FA5;color:#fff !important;font-weight:600; }}'
         for cat in _WGAL_CATS
     )
     show_panels = "\n".join(
@@ -1126,7 +1126,7 @@ def _build_wardrobe_gallery_html(items: list) -> str:
         ".wgal-radio{position:absolute;opacity:0;pointer-events:none}\n"
         ".wgal-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}\n"
         ".wgal-tab-label{border-radius:20px;padding:5px 14px;font-size:12px;"
-        "cursor:pointer;background:#EEF2FA;color:#5A6A8A;white-space:nowrap;"
+        "cursor:pointer;background:#EEF2FA;color:#111 !important;white-space:nowrap;"
         "transition:all 0.2s;user-select:none}\n"
         ".wgal-count{opacity:0.75}\n"
         ".wgal-panels{min-height:70px}\n"
