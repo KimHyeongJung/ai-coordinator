@@ -1271,6 +1271,9 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         bulk_deselect_all_w_btn = gr.Button("전체 해제", elem_classes=["btn-secondary"])
                     bulk_delete_w_btn = gr.Button("🗑️ 선택 항목 일괄 삭제", elem_classes=["btn-danger"])
                     bulk_delete_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
+                gr.HTML('<div class="section-header">악세서리·가방 갤러리</div>')
+                acc_bag_gallery_html = gr.HTML(value="<div style='color:#9BAAC4;font-size:13px;padding:8px 0'>갤러리를 새로고침하면 등록된 악세서리·가방 사진을 확인할 수 있습니다.</div>")
+                refresh_acc_btn = gr.Button("갤러리 새로고침", elem_classes=["btn-secondary"])
 
         # ── 탭 1: 코디 ────────────────────────────────────────────────────
         with gr.Tab("코디"):
@@ -1433,6 +1436,44 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _o_choices(outfits):
         return [(o.get("name", "이름없음"), o["id"]) for o in outfits]
 
+    # 악세서리·가방 갤러리 HTML 빌더
+    _ACC_BAG_CATS = {"악세서리", "가방"}
+
+    def _build_acc_bag_gallery(items) -> str:
+        targets = [it for it in (items or []) if it.get("category") in _ACC_BAG_CATS]
+        if not targets:
+            return '<div style="color:#9BAAC4;font-size:13px;padding:8px 0">등록된 악세서리·가방이 없습니다.</div>'
+        cards = []
+        for it in targets:
+            img_url = it.get("image_path")
+            name = it.get("name", "")
+            cat = it.get("category", "")
+            color = it.get("color", "")
+            if img_url:
+                img_part = (
+                    f'<img src="{img_url}" style="width:100%;height:110px;'
+                    f'object-fit:cover;border-radius:8px;display:block" />'
+                )
+            else:
+                icon = "👜" if cat == "가방" else "💍"
+                img_part = (
+                    f'<div style="width:100%;height:110px;background:#EEF2FA;border-radius:8px;'
+                    f'display:flex;align-items:center;justify-content:center;font-size:28px">{icon}</div>'
+                )
+            cards.append(
+                f'<div style="flex:0 0 130px;min-width:130px">'
+                f'{img_part}'
+                f'<div style="font-size:11px;font-weight:600;color:#2D3A4F;margin-top:5px;'
+                f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{name}</div>'
+                f'<div style="font-size:10px;color:#9BAAC4;margin-top:2px">{cat} · {color}</div>'
+                f'</div>'
+            )
+        return (
+            '<div style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 0">'
+            + "".join(cards)
+            + '</div>'
+        )
+
     # ── 페이지네이션 헬퍼 ─────────────────────────────────────────────────
     _PER_PAGE = 10
 
@@ -1465,22 +1506,27 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         result_msg, _ = wardrobe.analyze_and_save(image, desc, size, price, date)
         items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(items, 0)
-        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
+        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[]), _build_acc_bag_gallery(items)
 
     upload_btn.click(
         fn=_analyze_and_save,
         inputs=[image_input, description_input, size_input, price_input, date_input],
-        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
+        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, acc_bag_gallery_html],
     )
 
     def _refresh_wardrobe():
         items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(items, 0)
-        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
+        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[]), _build_acc_bag_gallery(items)
 
     refresh_wardrobe_btn.click(
         fn=_refresh_wardrobe,
-        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
+        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, acc_bag_gallery_html],
+    )
+
+    refresh_acc_btn.click(
+        fn=lambda: _build_acc_bag_gallery(storage.load_wardrobe().get("items", [])),
+        outputs=[acc_bag_gallery_html],
     )
 
     # 옷장 — 행 선택 → 편집 폼 채우기
@@ -1959,6 +2005,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             gr.update(choices=outfit_names, value=None),
             gr.update(choices=_w_choices(w_items), value=[]),
             gr.update(choices=_o_choices(o_items), value=[]),
+            _build_acc_bag_gallery(w_items),
         )
 
     demo.load(
@@ -1980,6 +2027,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             daily_outfit_select,
             bulk_w_select,
             bulk_o_select,
+            acc_bag_gallery_html,
         ],
     )
 

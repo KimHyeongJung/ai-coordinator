@@ -58,6 +58,11 @@ OUTFIT_SYSTEM_PROMPT = """
 허용 스타일: {allowed_styles}
 위 스타일 중 하나를 대표 스타일로 정하고 해당 스타일 아이템으로만 코디를 구성할 것. 스타일 정보가 없는 아이템은 선택 가능.
 
+[중복 방지 규칙] (우선 적용)
+같은 상황·계절에 이미 사용된 스타일: {used_styles}
+→ 위 스타일은 피하고, 아래 권장 스타일로 코디를 구성할 것. 권장 스타일이 없으면 허용 스타일 중 자유 선택.
+권장 스타일: {preferred_styles}
+
 [색상 규칙]
 {color_rule}
 
@@ -273,6 +278,76 @@ def _validate_and_fix(
     return result
 
 
+def _get_same_context_info(
+    outfits: list,
+    situation: str,
+    season: str,
+    all_items_map: dict,
+) -> dict[str, set[str]]:
+    """같은 상황+계절 기존 코디의 지배 스타일 → 사용 아이템 ID 매핑 반환."""
+    style_to_ids: dict[str, set[str]] = {}
+    for outfit in outfits:
+        o_sit = outfit.get("situation") or []
+        if isinstance(o_sit, str):
+            o_sit = [o_sit]
+        o_sea = outfit.get("season") or []
+        if isinstance(o_sea, str):
+            o_sea = [o_sea]
+        if situation not in o_sit or season not in o_sea:
+            continue
+        item_ids = outfit.get("item_ids") or []
+        sc: Counter = Counter()
+        for iid in item_ids:
+            it = all_items_map.get(iid)
+            if it and it.get("category") in _STYLE_CATS:
+                for s in _parse_styles(it):
+                    sc[s] += 1
+        if sc:
+            dominant = sc.most_common(1)[0][0]
+            style_to_ids.setdefault(dominant, set()).update(item_ids)
+    return style_to_ids
+
+
+def _try_restyle(
+    selected_ids: list[str],
+    groups: dict,
+    all_items_map: dict,
+    target_style: str,
+    exclude_ids: set[str],
+) -> list[str]:
+    """selected_ids를 target_style 아이템으로 교체 시도. 대체 불가 시 원본 유지."""
+    unified: list[str] = []
+    used: set[str] = set()
+    for iid in selected_ids:
+        it = all_items_map.get(iid)
+        if not it:
+            unified.append(iid)
+            continue
+        cat = it.get("category", "")
+        if cat not in _STYLE_CATS:
+            unified.append(iid)
+            continue
+        styles = _parse_styles(it)
+        if not styles or target_style in styles:
+            unified.append(iid)
+            used.add(iid)
+        else:
+            alts = [
+                c for c in groups.get(cat, [])
+                if c["id"] not in used
+                and c["id"] not in exclude_ids
+                and (not _parse_styles(c) or target_style in _parse_styles(c))
+            ]
+            if alts:
+                rep = random.choice(alts)
+                unified.append(rep["id"])
+                used.add(rep["id"])
+            else:
+                unified.append(iid)
+                used.add(iid)
+    return unified
+
+
 def _make_unique_name(name: str, existing: set[str]) -> str:
     """이미 존재하는 코디명이면 숫자 접미사를 붙여 고유하게 만든다."""
     if name not in existing:
@@ -329,16 +404,33 @@ def generate_outfit(situation: str, season: str) -> dict:
             for it in cat_items
         ]
 
-    allowed_styles = "·".join(sorted(_SITUATION_STYLES.get(situation, _SITUATION_STYLES["기타"])))
+    allowed_styles_set = _SITUATION_STYLES.get(situation, _SITUATION_STYLES["기타"])
+    allowed_styles = "·".join(sorted(allowed_styles_set))
     outer_rule = _build_outer_rule(season)
     color_rule = _SITUATION_COLOR_GUIDE.get(situation, _SITUATION_COLOR_GUIDE["기타"])
 
-    existing_outfit_names: set[str] = {
-        o.get("name", "") for o in storage.load_outfits().get("outfits", [])
-    }
+    existing_outfits = storage.load_outfits().get("outfits", [])
+    existing_outfit_names: set[str] = {o.get("name", "") for o in existing_outfits}
     existing_names_str = (
         "、".join(f'"{n}"' for n in existing_outfit_names if n) or "없음"
     )
+
+    # 같은 상황+계절 기존 코디 분석
+    all_items_map = {it["id"]: it for it in items}
+    style_to_used_ids = _get_same_context_info(existing_outfits, situation, season, all_items_map)
+    used_styles: set[str] = set(style_to_used_ids.keys())
+    preferred_styles: set[str] = allowed_styles_set - used_styles
+    all_used_ids: set[str] = set().union(*style_to_used_ids.values()) if style_to_used_ids else set()
+
+    used_styles_str = "·".join(sorted(used_styles)) if used_styles else "없음"
+    preferred_styles_str = "·".join(sorted(preferred_styles)) if preferred_styles else "제한 없음 (모든 스타일 허용)"
+
+    # 이미 사용된 아이템은 LLM 후보에서 제외 (같은 카테고리에 대체 아이템 있을 때만)
+    if all_used_ids:
+        for cat in list(wardrobe_summary.keys()):
+            fresh = [it for it in wardrobe_summary[cat] if it["id"] not in all_used_ids]
+            if fresh:
+                wardrobe_summary[cat] = fresh
 
     chain = _chain_lazy()
     try:
@@ -348,12 +440,39 @@ def generate_outfit(situation: str, season: str) -> dict:
                 "season": season,
                 "outer_rule": outer_rule,
                 "allowed_styles": allowed_styles,
+                "used_styles": used_styles_str,
+                "preferred_styles": preferred_styles_str,
                 "color_rule": color_rule,
                 "existing_names": existing_names_str,
                 "wardrobe_json": json.dumps(wardrobe_summary, ensure_ascii=False),
             }
         )
         result = _validate_and_fix(result, groups, season_groups, situation, season)
+
+        # 도미넌트 스타일이 기존 코디와 중복이면 preferred 스타일로 재교체 시도
+        if preferred_styles and result.get("item_ids"):
+            sc: Counter = Counter()
+            for iid in result["item_ids"]:
+                it = all_items_map.get(iid)
+                if it and it.get("category") in _STYLE_CATS:
+                    for s in _parse_styles(it):
+                        sc[s] += 1
+            if sc:
+                current_dominant = sc.most_common(1)[0][0]
+                if current_dominant in used_styles:
+                    for pref in sorted(preferred_styles):
+                        has_pref = any(
+                            pref in _parse_styles(it)
+                            for cat_items in groups.values()
+                            for it in cat_items
+                            if it.get("category") in _STYLE_CATS
+                        )
+                        if has_pref:
+                            result["item_ids"] = _try_restyle(
+                                result["item_ids"], groups, all_items_map,
+                                pref, all_used_ids,
+                            )
+                            break
 
         # LLM이 중복 이름을 반환했을 경우 후처리로 고유 이름 보장
         raw_name = result.get("name") or f"{season} {situation} 코디"

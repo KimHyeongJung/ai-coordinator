@@ -93,16 +93,27 @@ You are an AI stylist assistant. Respond ONLY in Korean (한국어).
 NEVER use Chinese characters (漢字/中文/汉字). If you detect yourself writing Chinese, stop immediately and switch to Korean.
 
 현재 날씨: {weather_info}
-사용자 옷장: {wardrobe_summary}
+사용자 옷장 (의류): {wardrobe_summary}
 저장된 코디 목록: {outfit_names}
+악세서리·가방 목록: {acc_bag_summary}
 
-규칙:
+[기본 규칙]
 - 저장된 코디 목록에 코디가 있으면 반드시 정확한 코디명을 **굵게** 표시하여 추천에 포함할 것 (예: **블랙 캐주얼 코디**)
 - 코디 목록이 없으면 옷장에 있는 의류를 조합해서 추천
 - 날씨와 상황에 맞는 레이어링 팁 포함
 - 오직 한국어와 영어만 사용. 한자(漢字·中文) 절대 금지.
 - 추천 코디는 구체적인 아이템명으로 설명
 - 옷장이 비어있으면 일반적인 코디 조언 제공
+
+[악세서리·가방 추천 규칙]
+- 악세서리·가방 목록에 아이템이 있으면 상황에 맞는 것을 1~2개 반드시 추천하고 **굵게** 표시
+- 상황별 추천 기준:
+  회사: 비즈니스백·토트백, 심플한 시계·벨트 등 포인트 악세서리
+  데이트: 핸드백·크로스백, 귀걸이·목걸이 등 포인트 악세서리
+  운동: 스포츠백·백팩, 머리띠·밴드 등 기능성 악세서리
+  경조사: 클러치백·미니백, 심플한 귀걸이·목걸이 (화려한 것 금지)
+  기타: 상황에 어울리는 자유 선택
+- 악세서리·가방 목록이 없으면 상황에 맞는 아이템을 일반 조언으로 제안
 """
 
 _daily_llm = None
@@ -287,13 +298,26 @@ def recommend_daily_look(
         else "날씨 정보 조회 실패"
     )
 
+    _ACC_BAG_CATS = {"악세서리", "가방"}
+    clothing_items = [it for it in items if it.get("category") not in _ACC_BAG_CATS]
+    acc_bag_items  = [it for it in items if it.get("category") in _ACC_BAG_CATS]
+
     wardrobe_summary = (
         ", ".join(
-            f"{item['name']}({item.get('category', '')})"
-            for item in items[:20]
+            f"{it['name']}({it.get('category', '')})"
+            for it in clothing_items[:20]
         )
-        if items
+        if clothing_items
         else "등록된 의류 없음"
+    )
+
+    acc_bag_summary = (
+        ", ".join(
+            f"{it['name']}({it.get('category', '')}, {it.get('color', '')})"
+            for it in acc_bag_items[:15]
+        )
+        if acc_bag_items
+        else "등록된 악세서리·가방 없음"
     )
 
     outfit_names = (
@@ -305,6 +329,7 @@ def recommend_daily_look(
     system_content = DAILY_SYSTEM_PROMPT.format(
         weather_info=weather_info,
         wardrobe_summary=wardrobe_summary,
+        acc_bag_summary=acc_bag_summary,
         outfit_names=outfit_names,
     )
 
