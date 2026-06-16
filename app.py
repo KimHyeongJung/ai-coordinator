@@ -1117,7 +1117,7 @@ USAGE_GUIDE_HTML = """
       <div class="guide-step-desc">
         <b>데일리룩</b> 탭 → 채팅으로 오늘 코디 질문<br>
         AI(Qwen2.5)가 <em>날씨 + 저장된 코디</em>를 바탕으로 추천하고<br>
-        추천한 코디명을 코디 상세 보기 선택 시 착용 의류 사진도 확인할 수 있습니다.
+        추천한 코디명을 코디 상세 보기에서 착용 의류 사진도 확인할 수 있습니다.
       </div>
     </div>
   </div>
@@ -1508,12 +1508,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _generate_outfit(situation, season):
         msg, table = outfit.generate_outfit_ui(situation, season)
         outfit_items = storage.load_outfits().get("outfits", [])
-        return msg, table, outfit_items
+        outfit_names = [o.get("name", "") for o in outfit_items if o.get("name")]
+        return msg, table, outfit_items, gr.update(choices=outfit_names, value=None)
 
     gen_btn.click(
         fn=_generate_outfit,
         inputs=[situation_input, season_input],
-        outputs=[outfit_result, outfit_df, outfit_items_state],
+        outputs=[outfit_result, outfit_df, outfit_items_state, daily_outfit_select],
     )
 
     # 코디 — 착용 의류 갤러리 HTML 생성 헬퍼
