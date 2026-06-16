@@ -1,13 +1,12 @@
 """
 AI 코디 자동 생성: 옷장 아이템 목록 → LLM → 코디 JSON → Supabase 저장.
-
-기존 LCEL 체인 패턴(prompt | ChatHuggingFace | JsonOutputParser)을 재사용한다.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import random
 
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -19,27 +18,46 @@ from model_config import LLM_MODEL, get_token
 
 logger = logging.getLogger(__name__)
 
+# 아우터가 필요한 계절/상황
+_OUTER_SEASONS = {"가을", "겨울"}
+_OUTER_SITUATIONS = {"회사", "경조사"}
+
+# 가방이 권장되는 상황
+_BAG_PREFERRED = {"회사", "여행", "데이트", "경조사"}
+# 악세서리가 권장되는 상황
+_ACC_PREFERRED = {"경조사", "데이트", "회사"}
+
 OUTFIT_SYSTEM_PROMPT = """
-너는 스타일리스트 AI다. 주어진 옷장 목록에서 어울리는 의류를 조합해 코디를 만들어라.
+너는 스타일리스트 AI다. 주어진 카테고리별 옷장 목록에서 상황과 계절에 맞는 코디를 구성해라.
 반드시 아래 JSON 형식만 출력하고, 다른 텍스트/마크다운/코드블록 금지.
-{{"name": str, "item_ids": [str], "tags": [str], "situation": str, "season": str, "reason": str}}
-- item_ids: 선택한 아이템의 id 배열 (2~4개)
-- tags: 코디 태그 배열 (예: ["회사", "봄", "스마트캐주얼"])
-- reason: 이 조합을 선택한 이유 (한국어 1~2문장)
-언어 규칙: 모든 텍스트는 반드시 한국어 또는 영어로만 작성할 것. 한자(漢字·中文) 사용 절대 금지.
+{{"name": str, "item_ids": [str], "tags": [str], "reason": str}}
+
+[필수 구성 규칙]
+1. 상의(top): 반드시 1개 선택
+2. 하의(bottom): 반드시 1개 선택
+3. 신발(shoes): 반드시 1개 선택
+4. 아우터(outer): {outer_rule}
+5. 가방(bag): {bag_rule}
+6. 악세서리(acc): {acc_rule}
+
+- item_ids: 위 규칙에 따라 선택한 아이템 id 배열 (최소 3개, 카테고리별로 규칙 준수)
+- tags: 코디 태그 배열 (예: ["캐주얼", "봄", "데일리"])
+- reason: 이 코디를 선택한 이유, 어떤 카테고리를 왜 포함했는지 설명 (한국어 2~3문장)
+- name: 코디명 (상황+계절+스타일 반영, 예: "봄 오피스 스마트캐주얼")
+
+언어 규칙: 모든 텍스트는 반드시 한국어 또는 영어로만 작성. 한자(漢字·中文) 사용 절대 금지.
 """
 
 _outfit_chain = None
 
 
 def _chain_lazy():
-    """LCEL 체인: prompt | ChatHuggingFace | JsonOutputParser"""
     global _outfit_chain
     if _outfit_chain is None:
         endpoint = HuggingFaceEndpoint(
             repo_id=LLM_MODEL,
             task="text-generation",
-            max_new_tokens=400,
+            max_new_tokens=500,
             temperature=0.3,
             huggingfacehub_api_token=get_token(),
         )
@@ -47,11 +65,87 @@ def _chain_lazy():
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", OUTFIT_SYSTEM_PROMPT),
-                ("human", "상황: {situation}\n계절: {season}\n\n옷장 목록:\n{wardrobe_json}"),
+                ("human", "상황: {situation}\n계절: {season}\n\n카테고리별 옷장 목록:\n{wardrobe_json}"),
             ]
         )
         _outfit_chain = prompt | llm | JsonOutputParser()
     return _outfit_chain
+
+
+def _build_outer_rule(situation: str, season: str) -> str:
+    if season in _OUTER_SEASONS or situation in _OUTER_SITUATIONS:
+        return "필수 포함 — 해당 계절/상황에 아우터가 필요함. outer 카테고리에서 반드시 1개 선택"
+    return "선택 — 봄/여름이면 생략 가능. 필요하다고 판단되면 1개 선택"
+
+
+def _build_bag_rule(situation: str) -> str:
+    if situation in _BAG_PREFERRED:
+        return f"권장 포함 — {situation} 상황에 가방이 어울림. bag 카테고리에서 1개 선택 권장"
+    return "선택 — 상황에 맞으면 1개 선택"
+
+
+def _build_acc_rule(situation: str) -> str:
+    if situation in _ACC_PREFERRED:
+        return f"권장 포함 — {situation} 상황에 악세서리가 어울림. acc 카테고리에서 1개 선택 권장"
+    return "선택 — 상황에 맞으면 1개 선택"
+
+
+def _group_by_category(items: list) -> dict:
+    """아이템을 카테고리별로 그룹화."""
+    groups: dict[str, list] = {}
+    for item in items:
+        cat = item.get("category", "기타")
+        groups.setdefault(cat, []).append(item)
+    return groups
+
+
+def _pick_fallback(groups: dict, category: str, used_ids: set) -> str | None:
+    """해당 카테고리에서 아직 사용되지 않은 아이템 1개를 랜덤 선택."""
+    candidates = [
+        it for it in groups.get(category, [])
+        if it["id"] not in used_ids
+    ]
+    if not candidates:
+        candidates = groups.get(category, [])
+    if not candidates:
+        return None
+    return random.choice(candidates)["id"]
+
+
+def _validate_and_fix(
+    result: dict,
+    groups: dict,
+    situation: str,
+    season: str,
+) -> dict:
+    """
+    LLM 결과의 item_ids가 필수 카테고리를 포함하는지 검증.
+    누락된 카테고리는 옷장에서 자동으로 채운다.
+    """
+    all_items = {it["id"]: it for cats in groups.values() for it in cats}
+    selected_ids: list[str] = result.get("item_ids") or []
+    selected_cats = {all_items[iid]["category"] for iid in selected_ids if iid in all_items}
+    used_ids = set(selected_ids)
+
+    required = ["상의", "하의", "신발"]
+    for cat in required:
+        if cat not in selected_cats and cat in groups:
+            fid = _pick_fallback(groups, cat, used_ids)
+            if fid:
+                selected_ids.append(fid)
+                used_ids.add(fid)
+                selected_cats.add(cat)
+
+    # 아우터 필수 상황인데 누락된 경우
+    outer_required = season in _OUTER_SEASONS or situation in _OUTER_SITUATIONS
+    if outer_required and "아우터" not in selected_cats and "아우터" in groups:
+        fid = _pick_fallback(groups, "아우터", used_ids)
+        if fid:
+            selected_ids.append(fid)
+            used_ids.add(fid)
+
+    result["item_ids"] = selected_ids
+    return result
 
 
 def generate_outfit(situation: str, season: str) -> dict:
@@ -64,23 +158,28 @@ def generate_outfit(situation: str, season: str) -> dict:
             "name": "옷장 비어있음",
             "item_ids": [],
             "tags": [],
-            "situation": situation,
-            "season": season,
             "reason": "옷장에 등록된 의류가 없습니다. 먼저 옷장 탭에서 의류를 추가해 주세요.",
         }
 
-    # LLM에게 필요한 필드만 전달 (토큰 절약)
-    wardrobe_summary = [
-        {
-            "id": item["id"],
-            "name": item.get("name", ""),
-            "category": item.get("category", ""),
-            "color": item.get("color", ""),
-            "style": item.get("style", ""),
-            "season": item.get("season", []),
-        }
-        for item in items
-    ]
+    groups = _group_by_category(items)
+
+    # 카테고리별로 정리된 요약 (LLM 토큰 절약 + 구조 명확화)
+    wardrobe_summary: dict[str, list] = {}
+    for cat, cat_items in groups.items():
+        wardrobe_summary[cat] = [
+            {
+                "id": it["id"],
+                "name": it.get("name", ""),
+                "color": it.get("color", ""),
+                "style": it.get("style", ""),
+                "season": it.get("season", []),
+            }
+            for it in cat_items
+        ]
+
+    outer_rule = _build_outer_rule(situation, season)
+    bag_rule = _build_bag_rule(situation)
+    acc_rule = _build_acc_rule(situation)
 
     chain = _chain_lazy()
     try:
@@ -88,11 +187,13 @@ def generate_outfit(situation: str, season: str) -> dict:
             {
                 "situation": situation,
                 "season": season,
+                "outer_rule": outer_rule,
+                "bag_rule": bag_rule,
+                "acc_rule": acc_rule,
                 "wardrobe_json": json.dumps(wardrobe_summary, ensure_ascii=False),
             }
         )
-        result.setdefault("situation", situation)
-        result.setdefault("season", season)
+        result = _validate_and_fix(result, groups, situation, season)
         return result
     except Exception as e:
         logger.error("generate_outfit 실패: %s", e)
@@ -100,8 +201,6 @@ def generate_outfit(situation: str, season: str) -> dict:
             "name": "코디 생성 실패",
             "item_ids": [],
             "tags": [],
-            "situation": situation,
-            "season": season,
             "reason": f"AI 오류: {str(e)[:100]}",
         }
 
@@ -114,18 +213,24 @@ def generate_outfit_ui(situation: str, season: str) -> tuple[str, list]:
     """
     Gradio 콜백용 래퍼.
     코디를 생성하고 DB에 저장한 뒤 (결과 메시지, 코디 테이블) 반환.
-    situation / season 은 UI 드롭다운에서 선택한 카테고리 값을 항상 사용한다.
     """
     result = generate_outfit(situation, season)
 
-    # UI 드롭다운 값이 유효한 카테고리면 그대로, 아니면 기본값
     saved_situation = situation if situation in _VALID_SITUATIONS else "기타"
     saved_season = season if season in _VALID_SEASONS else "사계절"
 
-    # 실제 아이템이 선택된 경우만 DB에 저장
     if result.get("item_ids"):
         outfit_name = result.get("name") or f"{saved_situation} 코디"
         tags = result.get("tags") or []
+
+        # 구성된 카테고리 요약 (결과 메시지용)
+        all_items = {it["id"]: it for it in storage.load_wardrobe().get("items", [])}
+        cats_included = sorted({
+            all_items[iid].get("category", "")
+            for iid in result["item_ids"]
+            if iid in all_items
+        })
+
         storage.add_outfit(
             {
                 "name": outfit_name,
@@ -141,6 +246,7 @@ def generate_outfit_ui(situation: str, season: str) -> tuple[str, list]:
             f"✅ 코디 생성 완료!\n"
             f"코디명: {outfit_name}\n"
             f"상황: {saved_situation} | 계절: {saved_season}\n"
+            f"구성: {', '.join(cats_included)}\n"
             f"태그: {tags_str}"
         )
     else:

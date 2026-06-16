@@ -1230,6 +1230,15 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         save_edit_w_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
                         delete_w_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
                     edit_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
+                with gr.Accordion("🗑️ 일괄 삭제", open=False):
+                    bulk_w_select = gr.Dropdown(
+                        choices=[],
+                        multiselect=True,
+                        label="삭제할 의류 선택 (복수 선택 가능)",
+                        interactive=True,
+                    )
+                    bulk_delete_w_btn = gr.Button("🗑️ 선택 항목 일괄 삭제", elem_classes=["btn-danger"])
+                    bulk_delete_w_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
         # ── 탭 1: 코디 ────────────────────────────────────────────────────
         with gr.Tab("코디"):
@@ -1291,6 +1300,15 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         save_edit_o_btn = gr.Button("💾 수정 저장", elem_classes=["btn-primary"])
                         delete_o_btn = gr.Button("🗑️ 삭제", elem_classes=["btn-danger"])
                     edit_o_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
+                with gr.Accordion("🗑️ 일괄 삭제", open=False):
+                    bulk_o_select = gr.Dropdown(
+                        choices=[],
+                        multiselect=True,
+                        label="삭제할 코디 선택 (복수 선택 가능)",
+                        interactive=True,
+                    )
+                    bulk_delete_o_btn = gr.Button("🗑️ 선택 항목 일괄 삭제", elem_classes=["btn-danger"])
+                    bulk_delete_o_result = gr.Textbox(interactive=False, show_label=False, max_lines=1)
 
         # ── 탭 2: 대시보드 ────────────────────────────────────────────────
         with gr.Tab("대시보드"):
@@ -1365,25 +1383,32 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
 
     # ── 이벤트 연결 ──────────────────────────────────────────────────────────
 
+    # ── 일괄 삭제용 choices 헬퍼 ──────────────────────────────────────────
+    def _w_choices(items):
+        return [(f"{it.get('name','?')} [{it.get('category','')}]", it["id"]) for it in items]
+
+    def _o_choices(outfits):
+        return [(o.get("name", "이름없음"), o["id"]) for o in outfits]
+
     # 옷장 — 업로드/추가
     def _analyze_and_save(image, desc, size, price, date):
         result_msg, table = wardrobe.analyze_and_save(image, desc, size, price, date)
         items = storage.load_wardrobe().get("items", [])
-        return result_msg, table, items
+        return result_msg, table, items, gr.update(choices=_w_choices(items), value=[])
 
     upload_btn.click(
         fn=_analyze_and_save,
         inputs=[image_input, description_input, size_input, price_input, date_input],
-        outputs=[upload_result, wardrobe_df, wardrobe_items_state],
+        outputs=[upload_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
     )
 
     def _refresh_wardrobe():
         items = storage.load_wardrobe().get("items", [])
-        return dashboard.get_wardrobe_table(items), items
+        return dashboard.get_wardrobe_table(items), items, gr.update(choices=_w_choices(items), value=[])
 
     refresh_wardrobe_btn.click(
         fn=_refresh_wardrobe,
-        outputs=[wardrobe_df, wardrobe_items_state],
+        outputs=[wardrobe_df, wardrobe_items_state, bulk_w_select],
     )
 
     # 옷장 — 행 선택 → 편집 폼 채우기
@@ -1437,7 +1462,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     # 옷장 — 수정 저장
     def _update_wardrobe(sel_idx, items, name, category, color, style, season, price, purchase_date, wash, size):
         if sel_idx < 0 or not items or sel_idx >= len(items):
-            return "수정할 항목을 먼저 선택해주세요.", [], []
+            return "수정할 항목을 먼저 선택해주세요.", [], [], gr.update()
         item = items[sel_idx]
         storage.update_item(item["id"], {
             "name": name,
@@ -1451,7 +1476,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             "size": size or None,
         })
         new_items = storage.load_wardrobe().get("items", [])
-        return f"✅ '{name}' 수정 완료", dashboard.get_wardrobe_table(new_items), new_items
+        return (
+            f"✅ '{name}' 수정 완료",
+            dashboard.get_wardrobe_table(new_items),
+            new_items,
+            gr.update(choices=_w_choices(new_items), value=[]),
+        )
 
     save_edit_w_btn.click(
         fn=_update_wardrobe,
@@ -1461,7 +1491,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             edit_w_season, edit_w_price, edit_w_purchase_date, edit_w_wash,
             edit_w_size,
         ],
-        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state],
+        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
     )
 
     # 옷장 — 삭제
@@ -1477,7 +1507,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(), gr.update(open=False))
+                    gr.update(), gr.update(open=False), gr.update())
         item = items[sel_idx]
         storage.delete_item(item["id"])
         new_items = storage.load_wardrobe().get("items", [])
@@ -1489,6 +1519,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             _EMPTY_IMAGE_HTML,
             "", "기타", "", "", [], "", "", "", "",
             gr.update(open=False),
+            gr.update(choices=_w_choices(new_items), value=[]),
         )
 
     delete_w_btn.click(
@@ -1500,7 +1531,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             edit_w_name, edit_w_category, edit_w_color, edit_w_style,
             edit_w_season, edit_w_price, edit_w_purchase_date,
             edit_w_wash, edit_w_size,
-            wardrobe_edit_acc,
+            wardrobe_edit_acc, bulk_w_select,
         ],
     )
 
@@ -1509,12 +1540,16 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         msg, table = outfit.generate_outfit_ui(situation, season)
         outfit_items = storage.load_outfits().get("outfits", [])
         outfit_names = [o.get("name", "") for o in outfit_items if o.get("name")]
-        return msg, table, outfit_items, gr.update(choices=outfit_names, value=None)
+        return (
+            msg, table, outfit_items,
+            gr.update(choices=outfit_names, value=None),
+            gr.update(choices=_o_choices(outfit_items), value=[]),
+        )
 
     gen_btn.click(
         fn=_generate_outfit,
         inputs=[situation_input, season_input],
-        outputs=[outfit_result, outfit_df, outfit_items_state, daily_outfit_select],
+        outputs=[outfit_result, outfit_df, outfit_items_state, daily_outfit_select, bulk_o_select],
     )
 
     # 코디 — 착용 의류 갤러리 HTML 생성 헬퍼
@@ -1631,7 +1666,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             return ("삭제할 항목을 먼저 선택해주세요.",
                     gr.update(), gr.update(), gr.update(),
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(open=False), gr.update())
+                    gr.update(open=False), gr.update(), gr.update())
         item = items[sel_idx]
         storage.delete_outfit(item["id"])
         new_items = storage.load_outfits().get("outfits", [])
@@ -1645,6 +1680,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             "", [], [], "",
             gr.update(open=False),
             gr.update(choices=outfit_names, value=None),
+            gr.update(choices=_o_choices(new_items), value=[]),
         )
 
     delete_o_btn.click(
@@ -1655,8 +1691,49 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             selected_outfit_idx, outfit_items_gallery,
             edit_o_name, edit_o_situation, edit_o_season, edit_o_tags,
             outfit_edit_acc,
-            daily_outfit_select,
+            daily_outfit_select, bulk_o_select,
         ],
+    )
+
+    # 옷장 — 일괄 삭제
+    def _bulk_delete_wardrobe(selected_ids, items):
+        if not selected_ids:
+            return "삭제할 항목을 선택해주세요.", gr.update(), gr.update(), gr.update()
+        names = [next((it.get("name","") for it in items if it["id"] == iid), "") for iid in selected_ids]
+        for iid in selected_ids:
+            storage.delete_item(iid)
+        new_items = storage.load_wardrobe().get("items", [])
+        msg = f"✅ {len(selected_ids)}개 삭제 완료: {', '.join(n for n in names if n)}"
+        return msg, dashboard.get_wardrobe_table(new_items), new_items, gr.update(choices=_w_choices(new_items), value=[])
+
+    bulk_delete_w_btn.click(
+        fn=_bulk_delete_wardrobe,
+        inputs=[bulk_w_select, wardrobe_items_state],
+        outputs=[bulk_delete_w_result, wardrobe_df, wardrobe_items_state, bulk_w_select],
+    )
+
+    # 코디 — 일괄 삭제
+    def _bulk_delete_outfit(selected_ids, items):
+        if not selected_ids:
+            return "삭제할 항목을 선택해주세요.", gr.update(), gr.update(), gr.update(), gr.update()
+        names = [next((it.get("name","") for it in items if it["id"] == iid), "") for iid in selected_ids]
+        for iid in selected_ids:
+            storage.delete_outfit(iid)
+        new_items = storage.load_outfits().get("outfits", [])
+        outfit_names = [o.get("name", "") for o in new_items if o.get("name")]
+        msg = f"✅ {len(selected_ids)}개 삭제 완료: {', '.join(n for n in names if n)}"
+        return (
+            msg,
+            dashboard.get_outfit_table(new_items),
+            new_items,
+            gr.update(choices=_o_choices(new_items), value=[]),
+            gr.update(choices=outfit_names, value=None),
+        )
+
+    bulk_delete_o_btn.click(
+        fn=_bulk_delete_outfit,
+        inputs=[bulk_o_select, outfit_items_state],
+        outputs=[bulk_delete_o_result, outfit_df, outfit_items_state, bulk_o_select, daily_outfit_select],
     )
 
     # 대시보드
@@ -1719,6 +1796,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             stats["total_outfits"],
             dashboard.build_stats_cards(stats),
             gr.update(choices=outfit_names, value=None),
+            gr.update(choices=_w_choices(w_items), value=[]),
+            gr.update(choices=_o_choices(o_items), value=[]),
         )
 
     demo.load(
@@ -1734,6 +1813,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             total_outfits_num,
             stats_html,
             daily_outfit_select,
+            bulk_w_select,
+            bulk_o_select,
         ],
     )
 
