@@ -97,9 +97,15 @@ NEVER use Chinese characters (漢字/中文/汉字). If you detect yourself writ
 저장된 코디 목록: {outfit_names}
 악세서리·가방 목록: {acc_bag_summary}
 
-[기본 규칙]
-- 저장된 코디 목록에 코디가 있으면 반드시 정확한 코디명을 **굵게** 표시하여 추천에 포함할 것 (예: **블랙 캐주얼 코디**)
-- 코디 목록이 없으면 옷장에 있는 의류를 조합해서 추천
+[절대 규칙 — 코디 추천]
+저장된 코디 목록이 비어 있지 않으면 아래 규칙을 반드시 따를 것. 예외 없음.
+1. 코디를 추천할 때는 반드시 '저장된 코디 목록'에 있는 코디명 그대로 사용할 것.
+2. 코디명은 반드시 **굵게** 표시. 예: **봄 데이트 클래식**
+3. 목록에 없는 코디명을 임의로 만들어서 추천하는 것은 절대 금지.
+4. 추천하는 모든 코디는 '저장된 코디 목록: {outfit_names}' 안에 존재해야 함.
+5. 코디 목록이 없을 때만 옷장 의류를 조합해서 추천.
+
+[기타 규칙]
 - 날씨와 상황에 맞는 레이어링 팁 포함
 - 오직 한국어와 영어만 사용. 한자(漢字·中文) 절대 금지.
 - 추천 코디는 구체적인 아이템명으로 설명
@@ -320,9 +326,10 @@ def recommend_daily_look(
         else "등록된 악세서리·가방 없음"
     )
 
+    saved_outfit_names: list[str] = [o.get("name", "") for o in outfits if o.get("name")]
     outfit_names = (
-        ", ".join(f'"{o.get("name", "")}"' for o in outfits[:15] if o.get("name"))
-        if outfits
+        ", ".join(f'"{n}"' for n in saved_outfit_names[:20])
+        if saved_outfit_names
         else "저장된 코디 없음"
     )
 
@@ -353,6 +360,14 @@ def recommend_daily_look(
     except Exception as e:
         logger.error("recommend_daily_look LLM 실패: %s", e)
         ai_text = f"죄송합니다, 응답 생성에 실패했습니다: {str(e)[:100]}"
+
+    # 후처리: 저장된 코디가 있는데 응답에 코디명이 하나도 언급되지 않으면 보완
+    if saved_outfit_names:
+        mentioned = [name for name in saved_outfit_names if name in ai_text]
+        if not mentioned:
+            # 응답 하단에 실제 저장된 코디명 목록을 추가
+            names_bold = " / ".join(f"**{n}**" for n in saved_outfit_names[:10])
+            ai_text += f"\n\n💡 저장된 코디 목록: {names_bold}"
 
     updated_history = chat_history + [
         {"role": "user", "content": user_message},
