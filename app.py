@@ -90,9 +90,14 @@ CUSTOM_CSS = """
 }
 
 /* ── Global ── */
-html, body { background: var(--surface) !important; }
+html, body {
+    background: var(--surface) !important;
+    min-width: 960px !important;   /* 가이드 450px + 콘텐츠 최소 510px 보장 */
+    overflow-x: auto !important;   /* 창이 960px 미만이면 페이지 자체 가로 스크롤 */
+}
 .gradio-container {
     max-width: 100% !important;
+    min-width: 960px !important;
     padding: 0 0 0 450px !important;
     margin: 0 !important;
     background: var(--surface) !important;
@@ -719,12 +724,18 @@ button.secondary:hover {
 #chat-send-btn button:active { transform: translateY(0) !important; }
 
 /* ── 데이터프레임 배경 ── */
-.table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: clip !important; box-shadow: var(--shadow-sm) !important; }
+.table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: hidden !important; box-shadow: var(--shadow-sm) !important; }
 .table-box > .block { border: none !important; padding: 0 !important; background: transparent !important; }
 /* 테이블 스크롤 영역 — Gradio 4/5 내부 래퍼 공통 타깃 */
 .table-box [data-testid="dataframe"] > div,
 .table-box .table-wrap,
-.table-box .scroll-hide { max-height: 700px !important; overflow-y: auto !important; }
+.table-box .scroll-hide {
+    max-height: 700px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;  /* 좁은 화면에서 테이블 가로 스크롤 허용 */
+}
+/* 테이블 최소 너비 보장 — 좁아져도 컬럼 깨지지 않게 */
+.table-box table { min-width: 600px !important; }
 .table-box table { border-collapse: collapse !important; width: 100% !important; }
 /* 헤더 행 */
 .table-box table thead tr,
