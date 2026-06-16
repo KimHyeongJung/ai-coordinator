@@ -50,7 +50,7 @@ CLOTHING_SYSTEM_PROMPT = """
 반드시 아래 JSON 형식만 출력하고, 다른 텍스트/마크다운/코드블록 금지.
 {{"category": str, "name": str, "color": str, "material": str,
  "style": str, "season": [str], "wash_instruction": str, "note": str}}
-- category: 상의/하의/아우터/신발/악세서리/스포츠/기타 중 하나
+- category: 상의/하의/아우터/신발/가방/악세서리/스포츠/기타 중 하나 (가방은 반드시 가방으로 분류할 것, 악세서리와 혼동 금지)
 - name: 구체적인 한국어 의류명 (예: 화이트 오버사이즈 크롭 티셔츠)
 - season: 적합한 계절 배열 (봄/여름/가을/겨울 중 복수 가능)
 - material: 캡션에서 추정 불가 시 "추정 불가" 입력

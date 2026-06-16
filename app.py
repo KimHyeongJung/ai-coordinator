@@ -1210,7 +1210,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                         with gr.Column():
                             edit_w_name = gr.Textbox(label="이름", interactive=True)
                             edit_w_category = gr.Dropdown(
-                                choices=["상의", "하의", "아우터", "신발", "가방", "악세사리", "기타"],
+                                choices=["상의", "하의", "아우터", "신발", "가방", "악세서리", "기타"],
                                 label="카테고리", interactive=True,
                             )
                             with gr.Row():
