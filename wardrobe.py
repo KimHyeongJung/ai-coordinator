@@ -49,10 +49,12 @@ CLOTHING_SYSTEM_PROMPT = """
 너는 패션 전문가 AI다. 영어로 된 의류 이미지 캡션을 분석해 의류 정보를 JSON으로 추출해라.
 반드시 아래 JSON 형식만 출력하고, 다른 텍스트/마크다운/코드블록 금지.
 {{"category": str, "name": str, "color": str, "material": str,
- "style": str, "season": [str], "wash_instruction": str, "note": str}}
+ "style": [str], "season": [str], "wash_instruction": str, "note": str}}
 - category: 반드시 아래 7개 중 정확히 하나만 출력할 것 → 상의 / 하의 / 아우터 / 신발 / 가방 / 악세서리 / 기타
   (가방은 반드시 "가방"으로, 운동복·스포츠웨어는 "상의"/"하의"로, 그 외 분류 불명확하면 "기타")
 - name: 구체적인 한국어 의류명 (예: 화이트 오버사이즈 크롭 티셔츠)
+- style: 아래 5개 중 해당하는 것을 복수 선택해 배열로 출력 → 클래식 / 스포티 / 포멀 / 캐주얼 / 미니멀
+  (반드시 위 5개 값만 사용, 그 외 표현 금지)
 - season: 적합한 계절 배열 (봄/여름/가을/겨울 중 복수 가능)
 - material: 캡션에서 추정 불가 시 "추정 불가" 입력
 - wash_instruction: 소재 기반 세탁 방법 한 줄로 작성
@@ -134,7 +136,7 @@ def extract_clothing_info(caption: str) -> dict:
             "name": "알 수 없는 의류",
             "color": "",
             "material": "추정 불가",
-            "style": "캐주얼",
+            "style": ["캐주얼"],
             "season": ["봄", "가을"],
             "wash_instruction": "라벨 확인",
             "note": f"분석 실패: {str(e)[:100]}",
@@ -174,6 +176,35 @@ def _normalize_category(raw: str | None) -> str:
         return s
     mapped = _CATEGORY_NORMALIZE.get(s) or _CATEGORY_NORMALIZE.get(s.lower())
     return mapped if mapped in _VALID_CATEGORIES else "기타"
+
+
+_VALID_STYLES = {"클래식", "스포티", "포멀", "캐주얼", "미니멀"}
+
+_STYLE_NORMALIZE: dict[str, str] = {
+    "classic": "클래식", "formal": "포멀", "casual": "캐주얼",
+    "sporty": "스포티", "sport": "스포티", "athletic": "스포티",
+    "minimal": "미니멀", "minimalist": "미니멀", "minimalistic": "미니멀",
+    "스트리트": "캐주얼", "street": "캐주얼", "비즈니스": "포멀",
+    "모던": "미니멀", "modern": "미니멀", "엘레강스": "클래식",
+    "엘레강트": "클래식", "elegant": "클래식",
+}
+
+
+def _normalize_style(raw) -> list[str]:
+    """LLM 스타일 출력을 유효한 스타일 배열로 정규화."""
+    if not raw:
+        return ["캐주얼"]
+    items = raw if isinstance(raw, list) else [raw]
+    result = []
+    for s in items:
+        s = str(s).strip()
+        if s in _VALID_STYLES:
+            result.append(s)
+        else:
+            mapped = _STYLE_NORMALIZE.get(s) or _STYLE_NORMALIZE.get(s.lower())
+            if mapped:
+                result.append(mapped)
+    return result if result else ["캐주얼"]
 
 
 def _load_image_from_path(image_path: str) -> Image.Image:
@@ -256,7 +287,7 @@ def analyze_and_save(
             "name": info.get("name", "알 수 없는 의류"),
             "color": info.get("color", ""),
             "material": info.get("material", ""),
-            "style": info.get("style", ""),
+            "style": _normalize_style(info.get("style")),
             "season": info.get("season", []),
             "wash_instruction": info.get("wash_instruction", ""),
             "size": size.strip() if size else None,

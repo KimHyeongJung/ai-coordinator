@@ -56,7 +56,7 @@ def get_wardrobe_table(items=None) -> list[list]:
                 _dash(item.get("name")),
                 _dash(item.get("category")),
                 _dash(item.get("color")),
-                _dash(item.get("style")),
+                _dash(", ".join(item["style"]) if isinstance(item.get("style"), list) else item.get("style")),
                 season,
                 _dash(item.get("price")),
                 _dash(item.get("purchase_date")),

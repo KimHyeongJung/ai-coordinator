@@ -1217,9 +1217,11 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                                 choices=["상의", "하의", "아우터", "신발", "가방", "악세서리", "기타"],
                                 label="카테고리", interactive=True,
                             )
-                            with gr.Row():
-                                edit_w_color = gr.Textbox(label="색상", interactive=True)
-                                edit_w_style = gr.Textbox(label="스타일", interactive=True)
+                            edit_w_color = gr.Textbox(label="색상", interactive=True)
+                    edit_w_style = gr.CheckboxGroup(
+                        choices=["클래식", "스포티", "포멀", "캐주얼", "미니멀"],
+                        label="스타일", interactive=True,
+                    )
                     edit_w_season = gr.CheckboxGroup(
                         choices=["봄", "여름", "가을", "겨울"],
                         label="계절", interactive=True,
@@ -1261,7 +1263,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 gr.HTML('<div class="section-header">AI 코디 생성</div>')
                 with gr.Row():
                     situation_input = gr.Dropdown(
-                        choices=["회사", "데이트", "운동", "경조사", "여행", "기타"],
+                        choices=["회사", "데이트", "운동", "경조사", "기타"],
                         label="상황", value="회사",
                     )
                     season_input = gr.Dropdown(
@@ -1293,7 +1295,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     )
                     edit_o_name = gr.Textbox(label="코디명", interactive=True)
                     edit_o_situation = gr.CheckboxGroup(
-                        choices=["회사", "데이트", "운동", "경조사", "여행", "기타"],
+                        choices=["회사", "데이트", "운동", "경조사", "기타"],
                         label="상황", interactive=True,
                         elem_id="edit-o-situation",
                     )
@@ -1448,17 +1450,22 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             return empty
         item = items[row]
         _VALID_SEASON_CHOICES = {"봄", "여름", "가을", "겨울"}
+        _VALID_STYLE_CHOICES = {"클래식", "스포티", "포멀", "캐주얼", "미니멀"}
         season = item.get("season") or []
         if isinstance(season, str):
             season = [s.strip() for s in season.split(",") if s.strip()]
         season = [s for s in season if s in _VALID_SEASON_CHOICES]
+        style = item.get("style") or []
+        if isinstance(style, str):
+            style = [s.strip() for s in style.split(",") if s.strip()]
+        style = [s for s in style if s in _VALID_STYLE_CHOICES]
         return (
             row,
             _make_image_html(item.get("image_path")),
             item.get("name", ""),
             _safe_category(item.get("category")),
             item.get("color", ""),
-            item.get("style", ""),
+            style,
             season,
             item.get("price") or "",
             item.get("purchase_date") or "",
