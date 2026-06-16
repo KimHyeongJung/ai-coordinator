@@ -5,6 +5,7 @@ AI Closet — 스마트 AI 옷장 관리 서비스
 
 from __future__ import annotations
 
+import html as _html
 import json
 import os
 
@@ -1041,6 +1042,113 @@ setInterval(autoResizeResultBoxes, 800);
 _gr_major = int(gr.__version__.split(".")[0])
 
 
+_WGAL_CATS = ["상의", "하의", "신발", "아우터", "악세서리", "가방"]
+_WGAL_ICONS = {"상의": "👕", "하의": "👖", "신발": "👟", "아우터": "🧥", "악세서리": "💍", "가방": "👜"}
+
+
+def _build_wardrobe_gallery_html(items: list) -> str:
+    """카테고리별 탭 갤러리 HTML (옷장 탭 의류 목록 위 배치)."""
+    by_cat: dict[str, list] = {c: [] for c in _WGAL_CATS}
+    for it in (items or []):
+        cat = it.get("category", "")
+        if cat in by_cat:
+            by_cat[cat].append(it)
+
+    # 숨겨진 라디오 인풋
+    radios = ""
+    for i, cat in enumerate(_WGAL_CATS):
+        checked = " checked" if i == 0 else ""
+        radios += f'<input type="radio" id="wgal-r-{cat}" name="wgal-group" class="wgal-radio"{checked}>\n'
+
+    # 탭 레이블
+    labels = ""
+    for cat in _WGAL_CATS:
+        count = len(by_cat[cat])
+        icon = _WGAL_ICONS.get(cat, "📦")
+        labels += (
+            f'<label for="wgal-r-{cat}" class="wgal-tab-label">'
+            f'{icon} {cat} <span class="wgal-count">({count})</span></label>\n'
+        )
+
+    # 패널 (아이템 카드)
+    panels = ""
+    for cat in _WGAL_CATS:
+        cat_items = by_cat[cat]
+        extra_cls = ""
+        if cat_items:
+            cards = ""
+            for it in cat_items:
+                img_url = it.get("image_path") or ""
+                name = _html.escape((it.get("name") or "")[:14])
+                if img_url:
+                    img_part = (
+                        f'<img src="{_html.escape(img_url)}" '
+                        f'style="width:110px;height:110px;object-fit:cover;'
+                        f'border-radius:10px;display:block">'
+                    )
+                else:
+                    icon = _WGAL_ICONS.get(cat, "📦")
+                    img_part = (
+                        f'<div style="width:110px;height:110px;background:#EEF2FA;'
+                        f'border-radius:10px;display:flex;align-items:center;'
+                        f'justify-content:center;font-size:28px">{icon}</div>'
+                    )
+                cards += (
+                    f'<div style="flex:0 0 110px;text-align:center">'
+                    f'{img_part}'
+                    f'<div style="font-size:11px;color:#5A6A8A;margin-top:5px;'
+                    f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{name}</div>'
+                    f'</div>'
+                )
+            panel_body = cards
+        else:
+            extra_cls = " wgal-empty"
+            icon = _WGAL_ICONS.get(cat, "📦")
+            panel_body = f'<span>{icon} 등록된 {cat} 없음</span>'
+
+        panels += (
+            f'<div class="wgal-panel wgal-p-{cat}{extra_cls}">'
+            f'{panel_body}</div>\n'
+        )
+
+    # CSS (active 탭 하이라이트 + 해당 패널 표시)
+    active_labels = "\n".join(
+        f'#wgal-r-{cat}:checked ~ .wgal-tabs label[for="wgal-r-{cat}"]'
+        f' {{ background:#4A6FA5;color:#fff;font-weight:600; }}'
+        for cat in _WGAL_CATS
+    )
+    show_panels = "\n".join(
+        f'#wgal-r-{cat}:checked ~ .wgal-panels .wgal-p-{cat} {{ display:flex; }}'
+        for cat in _WGAL_CATS
+    )
+    css = (
+        "<style>\n"
+        ".wgal-radio{position:absolute;opacity:0;pointer-events:none}\n"
+        ".wgal-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}\n"
+        ".wgal-tab-label{border-radius:20px;padding:5px 14px;font-size:12px;"
+        "cursor:pointer;background:#EEF2FA;color:#5A6A8A;white-space:nowrap;"
+        "transition:all 0.2s;user-select:none}\n"
+        ".wgal-count{opacity:0.75}\n"
+        ".wgal-panels{min-height:70px}\n"
+        ".wgal-panel{display:none;flex-wrap:wrap;gap:12px;padding:8px 2px;"
+        "overflow-x:auto;scrollbar-width:thin;min-height:70px}\n"
+        ".wgal-empty{align-items:center;justify-content:center;"
+        "color:#9BAAC4;font-size:13px}\n"
+        f"{active_labels}\n"
+        f"{show_panels}\n"
+        "</style>"
+    )
+
+    return (
+        f"{css}\n"
+        f'<div class="wgal-wrap">\n'
+        f"{radios}"
+        f'<div class="wgal-tabs">\n{labels}</div>\n'
+        f'<div class="wgal-panels">\n{panels}</div>\n'
+        f"</div>"
+    )
+
+
 def _make_outfit_gallery_html(item_ids: list, wardrobe_map: dict) -> str:
     """코디의 착용 의류 이미지 카드 HTML 생성 (데일리룩 탭용)."""
     if not item_ids:
@@ -1209,6 +1317,8 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     elem_classes=["result-box"],
                     lines=3, max_lines=20,
                 )
+                gr.HTML('<div class="section-header">카테고리별 갤러리</div>')
+                wardrobe_gallery_html = gr.HTML(value=_build_wardrobe_gallery_html([]))
                 gr.HTML('<div class="section-header">저장된 의류 목록</div>')
                 wardrobe_df = gr.Dataframe(
                     headers=["이름", "카테고리", "색상", "스타일", "계절", "가격", "구매시기", "세탁방법"],
@@ -1507,22 +1617,22 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         result_msg, _ = wardrobe.analyze_and_save(image, desc, size, price, date)
         items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(items, 0)
-        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
+        return result_msg, paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[]), _build_wardrobe_gallery_html(items)
 
     upload_btn.click(
         fn=_analyze_and_save,
         inputs=[image_input, description_input, size_input, price_input, date_input],
-        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
+        outputs=[upload_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, wardrobe_gallery_html],
     )
 
     def _refresh_wardrobe():
         items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(items, 0)
-        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[])
+        return paged, items, pg, lbl, gr.update(choices=_w_choices(items), value=[]), _build_wardrobe_gallery_html(items)
 
     refresh_wardrobe_btn.click(
         fn=_refresh_wardrobe,
-        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
+        outputs=[wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, wardrobe_gallery_html],
     )
 
     refresh_acc_btn.click(
@@ -1622,6 +1732,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             pg,
             lbl,
             gr.update(choices=_w_choices(new_items), value=[]),
+            _build_wardrobe_gallery_html(new_items),
         )
 
     save_edit_w_btn.click(
@@ -1632,7 +1743,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             edit_w_season, edit_w_price, edit_w_purchase_date, edit_w_wash,
             edit_w_size,
         ],
-        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
+        outputs=[edit_w_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, wardrobe_gallery_html],
     )
 
     # 옷장 — 삭제
@@ -1664,6 +1775,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             "", "기타", "", "", [], "", "", "", "",
             gr.update(open=False),
             gr.update(choices=_w_choices(new_items), value=[]),
+            _build_wardrobe_gallery_html(new_items),
         )
 
     delete_w_btn.click(
@@ -1676,7 +1788,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             edit_w_name, edit_w_category, edit_w_color, edit_w_style,
             edit_w_season, edit_w_price, edit_w_purchase_date,
             edit_w_wash, edit_w_size,
-            wardrobe_edit_acc, bulk_w_select,
+            wardrobe_edit_acc, bulk_w_select, wardrobe_gallery_html,
         ],
     )
 
@@ -1857,12 +1969,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         new_items = storage.load_wardrobe().get("items", [])
         paged, pg, lbl = _paged_w(new_items, 0)
         msg = f"✅ {len(selected_ids)}개 삭제 완료: {', '.join(n for n in names if n)}"
-        return msg, paged, new_items, pg, lbl, gr.update(choices=_w_choices(new_items), value=[])
+        return msg, paged, new_items, pg, lbl, gr.update(choices=_w_choices(new_items), value=[]), _build_wardrobe_gallery_html(new_items)
 
     bulk_delete_w_btn.click(
         fn=_bulk_delete_wardrobe,
         inputs=[bulk_w_select, wardrobe_items_state],
-        outputs=[bulk_delete_w_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select],
+        outputs=[bulk_delete_w_result, wardrobe_df, wardrobe_items_state, w_page_num, w_page_label, bulk_w_select, wardrobe_gallery_html],
     )
     bulk_select_all_w_btn.click(
         fn=lambda items: gr.update(value=[v for _, v in _w_choices(items)]),
@@ -2021,6 +2133,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             gr.update(choices=_w_choices(w_items), value=[]),
             gr.update(choices=_o_choices(o_items), value=[]),
             _build_acc_bag_gallery(w_items),
+            _build_wardrobe_gallery_html(w_items),
         )
 
     demo.load(
@@ -2043,6 +2156,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             bulk_w_select,
             bulk_o_select,
             acc_bag_gallery_html,
+            wardrobe_gallery_html,
         ],
     )
 
