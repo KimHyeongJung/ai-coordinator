@@ -93,7 +93,7 @@ CUSTOM_CSS = """
 html, body { background: var(--surface) !important; }
 .gradio-container {
     max-width: 100% !important;
-    padding: 0 0 0 280px !important;
+    padding: 0 0 0 450px !important;
     margin: 0 !important;
     background: var(--surface) !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif !important;
@@ -785,7 +785,7 @@ button.secondary:hover {
     position: fixed !important;
     left: 0 !important;
     top: 0 !important;
-    width: 280px !important;
+    width: 450px !important;
     height: 100vh !important;
     overflow-y: auto !important;
     background: #EEF2FA !important;
@@ -1067,7 +1067,7 @@ USAGE_GUIDE_HTML = """
   <div class="guide-logo">
     <span class="guide-logo-icon">👗</span>
     <div>
-      <div class="guide-title">AI Closet</div>
+      <div class="guide-title">AI Closet 사용 가이드</div>
       <div class="guide-sub">스마트 AI 옷장 관리 사용 가이드</div>
     </div>
   </div>
@@ -1077,35 +1077,36 @@ USAGE_GUIDE_HTML = """
     <div class="guide-step-body">
       <div class="guide-step-title">📸 옷장에 옷 추가하기</div>
       <div class="guide-step-desc">
-        <b>옷장</b> 탭 → 사진을 업로드하거나 직접 설명을 입력<br>
+        <b>옷장</b> 탭 → </b>사진을 업로드</b>하거나 직접 설명을 입력 후<br>
+        <em>AI 분류 및 추가</em> 버튼 클릭<br>
         AI(Florence-2)가 자동으로 카테고리·색상·계절을 분류해 저장합니다.
       </div>
-      <div class="guide-tip">💡 사진 없이 <em>비고란</em>에 텍스트로도 추가 가능</div>
+      <div class="guide-tip">💡 사진 없이 비고란에 텍스트로도 추가 가능</div>
     </div>
   </div>
-
+  
   <div class="guide-step">
     <div class="guide-step-num">02</div>
     <div class="guide-step-body">
-      <div class="guide-step-title">✏️ 의류 수정 / 삭제</div>
+      <div class="guide-step-title">✨ AI 코디 생성</div>
       <div class="guide-step-desc">
-        저장된 의류 목록 테이블의 행을 클릭하면<br>
-        <b>선택 항목 수정 / 삭제</b> 패널이 열립니다.<br>
-        이름·카테고리·색상·계절 등 모든 항목을 수정할 수 있습니다.
+        <b>코디</b> 탭 → 상황·계절 선택 후<br>
+        <em>AI 코디 생성</em> 버튼 클릭<br>
+        AI(Qwen2.5)가 옷장 의류를 조합해 맞춤 코디를 추천·저장합니다.
       </div>
+      <div class="guide-tip">💡 저장된 코디는 상황·계절·태그 수정 가능</div>
     </div>
   </div>
 
   <div class="guide-step">
     <div class="guide-step-num">03</div>
     <div class="guide-step-body">
-      <div class="guide-step-title">✨ AI 코디 생성</div>
+      <div class="guide-step-title">✏️ 의류•코디 수정 / 삭제</div>
       <div class="guide-step-desc">
-        <b>코디</b> 탭 → 상황·계절 선택 후<br>
-        <em>AI 코디 생성</em> 버튼 클릭<br>
-        AI가 옷장 의류를 조합해 맞춤 코디를 추천·저장합니다.
+        저장된 의류•코디 목록 테이블의 행을 클릭하면<br>
+        <b>선택 항목 수정 / 삭제</b> 패널이 열립니다.<br>
+        이름·카테고리·색상·계절 등 모든 항목을 수정 및 삭제할 수 있습니다.
       </div>
-      <div class="guide-tip">💡 저장된 코디는 상황·계절·태그 수정 가능</div>
     </div>
   </div>
 
@@ -1115,8 +1116,8 @@ USAGE_GUIDE_HTML = """
       <div class="guide-step-title">🌤️ 데일리룩 추천</div>
       <div class="guide-step-desc">
         <b>데일리룩</b> 탭 → 채팅으로 오늘 코디 질문<br>
-        AI가 <em>날씨 + 저장된 코디</em>를 바탕으로 추천하고<br>
-        코디명 선택 시 착용 의류 사진도 확인할 수 있습니다.
+        AI(Qwen2.5)가 <em>날씨 + 저장된 코디</em>를 바탕으로 추천하고<br>
+        추천한 코디명을 코디 상세 보기 선택 시 착용 의류 사진도 확인할 수 있습니다.
       </div>
     </div>
   </div>
@@ -1128,6 +1129,7 @@ USAGE_GUIDE_HTML = """
       <div class="guide-step-desc">
         옷장 통계(카테고리·계절·상황별) 현황을 한눈에 확인합니다.
       </div>
+      <div class="guide-tip">💡 생성한 의류와 코디의 통계가 보이지 않으면 통계 새로고침 버튼 클릭</div>
     </div>
   </div>
 
@@ -1296,7 +1298,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                 <div class="topbar" style="position:sticky;top:58px;z-index:9">
                     <span class="topbar-title">옷장 대시보드</span>
                     <div class="topbar-meta">
-                        <span class="topbar-badge">실시간 통계</span>
+                        <span class="topbar-badge">의류•코디 통계</span>
                     </div>
                 </div>
             """)
