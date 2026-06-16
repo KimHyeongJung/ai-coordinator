@@ -1424,6 +1424,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             'color:#9BAAC4;font-size:12px">사진 없음</div>'
         )
 
+    _VALID_W_CATEGORIES = {"상의", "하의", "아우터", "신발", "가방", "악세서리", "기타"}
+
+    def _safe_category(raw) -> str:
+        """DB 저장값이 드롭다운 choices에 없으면 '기타'로 대체."""
+        s = str(raw).strip() if raw else "기타"
+        return s if s in _VALID_W_CATEGORIES else "기타"
+
     def _on_wardrobe_select(evt: gr.SelectData, items):
         row = evt.index[0]
         empty = (-1, _make_image_html(None), "", "기타", "", "", [], "", "", "", "", gr.update(open=True))
@@ -1437,7 +1444,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
             row,
             _make_image_html(item.get("image_path")),
             item.get("name", ""),
-            item.get("category", "기타"),
+            _safe_category(item.get("category")),
             item.get("color", ""),
             item.get("style", ""),
             season,

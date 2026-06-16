@@ -50,7 +50,8 @@ CLOTHING_SYSTEM_PROMPT = """
 반드시 아래 JSON 형식만 출력하고, 다른 텍스트/마크다운/코드블록 금지.
 {{"category": str, "name": str, "color": str, "material": str,
  "style": str, "season": [str], "wash_instruction": str, "note": str}}
-- category: 상의/하의/아우터/신발/가방/악세서리/스포츠/기타 중 하나 (가방은 반드시 가방으로 분류할 것, 악세서리와 혼동 금지)
+- category: 반드시 아래 7개 중 정확히 하나만 출력할 것 → 상의 / 하의 / 아우터 / 신발 / 가방 / 악세서리 / 기타
+  (가방은 반드시 "가방"으로, 운동복·스포츠웨어는 "상의"/"하의"로, 그 외 분류 불명확하면 "기타")
 - name: 구체적인 한국어 의류명 (예: 화이트 오버사이즈 크롭 티셔츠)
 - season: 적합한 계절 배열 (봄/여름/가을/겨울 중 복수 가능)
 - material: 캡션에서 추정 불가 시 "추정 불가" 입력
@@ -140,6 +141,41 @@ def extract_clothing_info(caption: str) -> dict:
         }
 
 
+_VALID_CATEGORIES = {"상의", "하의", "아우터", "신발", "가방", "악세서리", "기타"}
+
+# LLM이 영어나 비표준 값을 반환할 때 매핑
+_CATEGORY_NORMALIZE: dict[str, str] = {
+    # 영어
+    "top": "상의", "tops": "상의", "shirt": "상의", "t-shirt": "상의",
+    "blouse": "상의", "sweater": "상의", "knit": "상의",
+    "bottom": "하의", "bottoms": "하의", "pants": "하의", "jeans": "하의",
+    "skirt": "하의", "shorts": "하의", "trousers": "하의",
+    "outer": "아우터", "jacket": "아우터", "coat": "아우터", "outerwear": "아우터",
+    "shoes": "신발", "shoe": "신발", "sneakers": "신발", "boots": "신발",
+    "sandals": "신발", "loafers": "신발", "heels": "신발",
+    "bag": "가방", "bags": "가방", "backpack": "가방", "purse": "가방",
+    "handbag": "가방", "tote": "가방", "clutch": "가방",
+    "accessory": "악세서리", "accessories": "악세서리",
+    "hat": "악세서리", "belt": "악세서리", "scarf": "악세서리",
+    "sports": "상의", "sportswear": "상의",
+    # 한국어 비표준 표기
+    "악세사리": "악세서리",
+    "스포츠": "상의",
+    "액세서리": "악세서리",
+}
+
+
+def _normalize_category(raw: str | None) -> str:
+    """LLM 카테고리 출력을 드롭다운 허용값으로 정규화."""
+    if not raw:
+        return "기타"
+    s = raw.strip()
+    if s in _VALID_CATEGORIES:
+        return s
+    mapped = _CATEGORY_NORMALIZE.get(s) or _CATEGORY_NORMALIZE.get(s.lower())
+    return mapped if mapped in _VALID_CATEGORIES else "기타"
+
+
 def _load_image_from_path(image_path: str) -> Image.Image:
     """
     filepath 모드에서 Gradio가 전달한 경로로 PIL Image 로드.
@@ -216,7 +252,7 @@ def analyze_and_save(
                 logger.warning("이미지 업로드 실패 (계속 진행): %s", e)
 
         item = {
-            "category": info.get("category", "기타"),
+            "category": _normalize_category(info.get("category")),
             "name": info.get("name", "알 수 없는 의류"),
             "color": info.get("color", ""),
             "material": info.get("material", ""),

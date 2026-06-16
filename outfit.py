@@ -99,6 +99,21 @@ def _group_by_category(items: list) -> dict:
     return groups
 
 
+def _filter_by_season(items: list, season: str) -> list:
+    """선택한 계절에 맞는 의류만 반환. 사계절 아이템은 항상 포함."""
+    if season == "사계절":
+        return items
+    matched = []
+    for item in items:
+        item_seasons = item.get("season") or []
+        if isinstance(item_seasons, str):
+            item_seasons = [s.strip() for s in item_seasons.split(",") if s.strip()]
+        # 계절 정보 없거나 선택 계절 포함이거나 사계절이면 포함
+        if not item_seasons or season in item_seasons or "사계절" in item_seasons:
+            matched.append(item)
+    return matched
+
+
 def _pick_fallback(groups: dict, category: str, used_ids: set) -> str | None:
     """해당 카테고리에서 아직 사용되지 않은 아이템 1개를 랜덤 선택."""
     candidates = [
@@ -161,7 +176,16 @@ def generate_outfit(situation: str, season: str) -> dict:
             "reason": "옷장에 등록된 의류가 없습니다. 먼저 옷장 탭에서 의류를 추가해 주세요.",
         }
 
-    groups = _group_by_category(items)
+    all_groups = _group_by_category(items)
+
+    # 계절 필터링: 선택한 계절에 맞는 의류만 추출
+    filtered_items = _filter_by_season(items, season)
+    groups = _group_by_category(filtered_items)
+
+    # 필터 후 필수 카테고리가 비어있으면 전체 옷장에서 보완 (최소 코디 보장)
+    for cat in ["상의", "하의", "신발"]:
+        if cat not in groups and cat in all_groups:
+            groups[cat] = all_groups[cat]
 
     # 카테고리별로 정리된 요약 (LLM 토큰 절약 + 구조 명확화)
     wardrobe_summary: dict[str, list] = {}
