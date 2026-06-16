@@ -721,6 +721,10 @@ button.secondary:hover {
 /* ── 데이터프레임 배경 ── */
 .table-box { background: #EEF2FA !important; border: 1px solid var(--border) !important; border-radius: var(--radius-lg) !important; overflow: clip !important; box-shadow: var(--shadow-sm) !important; }
 .table-box > .block { border: none !important; padding: 0 !important; background: transparent !important; }
+/* 테이블 스크롤 영역 — Gradio 4/5 내부 래퍼 공통 타깃 */
+.table-box [data-testid="dataframe"] > div,
+.table-box .table-wrap,
+.table-box .scroll-hide { max-height: 700px !important; overflow-y: auto !important; }
 .table-box table { border-collapse: collapse !important; width: 100% !important; }
 /* 헤더 행 */
 .table-box table thead tr,
@@ -1195,7 +1199,6 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     headers=["이름", "카테고리", "색상", "스타일", "계절", "가격", "구매시기", "세탁방법"],
                     label=None,
                     elem_classes=["table-box"],
-                    height=700,
                 )
                 wardrobe_items_state = gr.State([])
                 selected_wardrobe_idx = gr.State(-1)
@@ -1276,7 +1279,6 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     headers=["코디명", "상황", "계절", "태그", "착용 의류", "AI생성", "생성일"],
                     label=None,
                     elem_classes=["table-box"],
-                    height=700,
                 )
                 outfit_items_state = gr.State([])
                 selected_outfit_idx = gr.State(-1)

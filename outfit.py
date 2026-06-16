@@ -40,6 +40,9 @@ OUTFIT_SYSTEM_PROMPT = """
 5. 가방(bag): {bag_rule}
 6. 악세서리(acc): {acc_rule}
 
+[스타일·색상 지침]
+{style_rule}
+
 - item_ids: 위 규칙에 따라 선택한 아이템 id 배열 (최소 3개, 카테고리별로 규칙 준수)
 - tags: 코디 태그 배열 (예: ["캐주얼", "봄", "데일리"])
 - reason: 이 코디를 선택한 이유, 어떤 카테고리를 왜 포함했는지 설명 (한국어 2~3문장)
@@ -88,6 +91,16 @@ def _build_acc_rule(situation: str) -> str:
     if situation in _ACC_PREFERRED:
         return f"권장 포함 — {situation} 상황에 악세서리가 어울림. acc 카테고리에서 1개 선택 권장"
     return "선택 — 상황에 맞으면 1개 선택"
+
+
+def _build_style_rule(situation: str) -> str:
+    if situation == "경조사":
+        return (
+            "경조사 전용 규칙: 블랙(검정) 계열 색상을 최우선으로 선택할 것. "
+            "클래식 또는 포멀 스타일 아이템을 우선 선택하고, "
+            "화려하거나 밝은 색상(빨강·노랑·형광 등)은 반드시 피할 것."
+        )
+    return "상황과 계절에 어울리는 색상과 스타일을 자유롭게 선택할 것."
 
 
 def _group_by_category(items: list) -> dict:
@@ -204,6 +217,7 @@ def generate_outfit(situation: str, season: str) -> dict:
     outer_rule = _build_outer_rule(situation, season)
     bag_rule = _build_bag_rule(situation)
     acc_rule = _build_acc_rule(situation)
+    style_rule = _build_style_rule(situation)
 
     chain = _chain_lazy()
     try:
@@ -214,6 +228,7 @@ def generate_outfit(situation: str, season: str) -> dict:
                 "outer_rule": outer_rule,
                 "bag_rule": bag_rule,
                 "acc_rule": acc_rule,
+                "style_rule": style_rule,
                 "wardrobe_json": json.dumps(wardrobe_summary, ensure_ascii=False),
             }
         )
