@@ -1332,7 +1332,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     w_prev_btn = gr.Button("◀ 이전", elem_classes=["btn-secondary"], scale=1, min_width=70)
                     with gr.Column(scale=4):
                         w_page_label = gr.HTML(
-                            '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
+                            '<div style="text-align:center;font-size:13px;color:#111111 !important;padding:8px 0">1 / 1 페이지</div>',
                         )
                     w_next_btn = gr.Button("다음 ▶", elem_classes=["btn-secondary"], scale=1, min_width=70)
                 refresh_wardrobe_btn = gr.Button(
@@ -1425,7 +1425,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
                     o_prev_btn = gr.Button("◀ 이전", elem_classes=["btn-secondary"], scale=1, min_width=70)
                     with gr.Column(scale=4):
                         o_page_label = gr.HTML(
-                            '<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">1 / 1 페이지</div>',
+                            '<div style="text-align:center;font-size:13px;color:#111111 !important;padding:8px 0">1 / 1 페이지</div>',
                         )
                     o_next_btn = gr.Button("다음 ▶", elem_classes=["btn-secondary"], scale=1, min_width=70)
                 with gr.Accordion("✏️ 선택 코디 수정 / 삭제", open=False) as outfit_edit_acc:
@@ -1591,7 +1591,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
     def _page_html(page: int, total: int) -> str:
         total_pages = max(1, (total + _PER_PAGE - 1) // _PER_PAGE)
         return (
-            f'<div style="text-align:center;font-size:13px;color:#5A6A8A;padding:8px 0">'
+            f'<div style="text-align:center;font-size:13px;color:#111111 !important;padding:8px 0">'
             f'<b>{page + 1}</b> / {total_pages} 페이지 &nbsp;(총 {total}개)'
             f'</div>'
         )
