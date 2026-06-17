@@ -1592,7 +1592,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AI Closet", theme=gr.themes.Soft()) as dem
         total_pages = max(1, (total + _PER_PAGE - 1) // _PER_PAGE)
         return (
             f'<div style="text-align:center;font-size:13px;color:#111111 !important;padding:8px 0">'
-            f'<b>{page + 1}</b> / {total_pages} 페이지 &nbsp;(총 {total}개)'
+            f'<b style="color:#111111 !important">{page + 1}</b> / {total_pages} 페이지 &nbsp;(총 {total}개)'
             f'</div>'
         )
 
